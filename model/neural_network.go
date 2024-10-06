@@ -15,4 +15,4 @@ type neural_network struct {
 	weight        []float32
 }
 
-func () createNetwork() n
+// func () createNetwork() n
