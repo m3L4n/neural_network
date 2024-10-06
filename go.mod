@@ -1,6 +1,6 @@
 module neural_network
 
-go 1.23.1
+go 1.23
 
 require (
 	github.com/akamensky/argparse v1.4.0
