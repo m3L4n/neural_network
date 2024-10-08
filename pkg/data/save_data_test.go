@@ -1,0 +1,84 @@
+package data
+
+import (
+	"fmt"
+	"neural_network/pkg/utils"
+	"os"
+	"testing"
+
+	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
+)
+
+// Test case when everything works fine
+
+
+func remove_file(pathFile string) (error){
+	fmt.Println(pathFile)
+	e := os.RemoveAll(pathFile + "/")
+	if e == nil{
+		fmt.Println("succesfuul delete", pathFile)
+	}else{
+		fmt.Println("succesfuul delete", e)
+	
+	}
+	
+	return e
+
+
+}
+
+func createFolderTest() (string, error){
+
+	pathRoot, err :=utils.Find_projet_root()
+	if err != nil{
+		return "", err
+	}
+	path_folder := pathRoot + "/test"
+	e := os.Mkdir(path_folder, 0777)
+
+	return path_folder, e
+
+}
+func TestSavedata_Success(t *testing.T) {
+    df := dataframe.New(
+        series.New([]string{"a", "b", "c", "d", "e"}, series.String, "alphas"),
+        series.New([]int{5, 4, 2, 3, 1}, series.Int, "numbers"),
+        series.New([]string{"a1", "b2", "c3", "d4", "e5"}, series.String, "alnums"),
+        series.New([]bool{true, false, true, true, false}, series.Bool, "state"),
+    )
+
+	path, ec := createFolderTest()
+	if  ec != nil{
+		t.Fatalf("Expected no error, but got: %v", ec)			
+	}
+	err := Savedata(df, "test", "test_data.csv")
+	if err != nil {
+		t.Fatalf("Expected no error, but got: %v", err)
+	}
+	fmt.Println("HERE THE PATH", path)
+	defer remove_file(path)
+	// }
+	expectedPath := path + "/test_data.csv"
+	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
+		t.Fatalf("Expected file to exist at %s but it doesn't", expectedPath)
+	}
+}
+
+// // Test case when an invalid directory is provided
+func TestSavedata_InvalidDirectory(t *testing.T) {
+    df := dataframe.New(
+        series.New([]string{"a", "b", "c", "d", "e"}, series.String, "alphas"),
+        series.New([]int{5, 4, 2, 3, 1}, series.Int, "numbers"),
+        series.New([]string{"a1", "b2", "c3", "d4", "e5"}, series.String, "alnums"),
+        series.New([]bool{true, false, true, true, false}, series.Bool, "state"),
+    )
+
+	err := Savedata(df, "/invalid-directory", "test_data.csv")
+	if err == nil {
+		t.Fatalf("Expected an error but got nil")
+	}
+
+
+}
+

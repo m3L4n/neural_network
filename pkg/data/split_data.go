@@ -1,8 +1,7 @@
-package utils
+package data
 
 import (
 	"errors"
-	"log"
 	"math/rand"
 	"os"
 
@@ -27,18 +26,14 @@ func Train_test_split(dataset *os.File, test_size float32) (dataframe.DataFrame,
 	})
 	shuffledTrain := df.Subset(indices[testRows:])
 	shuffledTest := df.Subset(indices[:testRows])
-	fileTrain, err := os.Create("data_train.csv")
-	if err != nil {
-		log.Fatal(err)
-		return dataframe.DataFrame{}, dataframe.DataFrame{}, errors.New("Cant create this file")
+	err := Savedata(shuffledTest, "data", "data_train.csv")
+	if (err != nil){
+	return dataframe.DataFrame{}, dataframe.DataFrame{}, err
 	}
-	fileTest, err := os.Create("data_test.csv")
-	if err != nil {
-		log.Fatal(err)
-		return dataframe.DataFrame{}, dataframe.DataFrame{}, errors.New("Cant create this file")
+	errTest := Savedata(shuffledTest, "data", "data_test.csv")
+	if (errTest != nil){
+	return dataframe.DataFrame{}, dataframe.DataFrame{}, errTest
 	}
-	shuffledTrain.WriteCSV(fileTrain)
-	shuffledTest.WriteCSV(fileTest)
 	return shuffledTrain, shuffledTest, nil
 
 }

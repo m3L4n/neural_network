@@ -1,15 +1,21 @@
-package utils
+package data
 
 import (
+	"neural_network/pkg/utils"
 	"os"
 	"testing"
 )
 
 func open_dataset() (*os.File, error) {
-	file, err := os.Open("../data.csv")
+	path, err := utils.Find_projet_root()
+	if (err != nil){
+		return &os.File{}, err
+	}
+	file, err := os.Open(path +"/data/data.csv")
 
 	return file, err
 }
+
 
 func TestSizeOfDF(t *testing.T) {
 	file, err := open_dataset()
