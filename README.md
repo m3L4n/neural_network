@@ -3,15 +3,11 @@
 This project involves building a neural network to classify breast cancer tumors as malignant (M) or benign (B) based on features extracted from cell nuclei. The dataset is provided in a CSV file containing 32 columns, where the "diagnosis" column serves as the label (M for malignant, B for benign). The other columns represent various characteristics of the cell nucleus obtained through fine-needle aspiration.
 
 
-
-
-
-
 Steps:
 
 ## Dataset Splitting:
 The first step involves splitting the dataset into two parts: one for training and one for validation. This ensures that the model is evaluated on unseen data during the training process.
-> to launch it go run cmd/split/main.go [-d || --dataset] [path dataset] 
+> to launch it make split &&  ./bin/split [-d || --dataset] [path dataset] 
 
 ## Training the Neural Network:
 
@@ -27,12 +23,12 @@ The dataset is located in the resources folder. It includes 32 columns, where "d
 ## Unit Testing:
 
 Unit tests have been implemented to verify the correctness of the key functions within the project. These tests ensure that the functions behave as expected and return the appropriate outputs.
-> to launch it go test -v ./... 
+> make test_all
 
 
 TODO
 
-  [] MAKEFILE
+  [X] MAKEFILE
   [x] splitting program
   [] neural network class (logic)
   [] train neuralnetwork
