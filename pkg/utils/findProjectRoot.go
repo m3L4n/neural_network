@@ -6,13 +6,16 @@ import (
 	"path/filepath"
 )
 
-func Find_projet_root() (string, error){
+// FindProjectRoot permit to get the root folder
+//
+// return the absolute path of the root folder
+func FindProjectRoot() (string, error) {
 
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", errors.New("Can't get the current working directory")
 	}
-		for {
+	for {
 		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); !os.IsNotExist(err) {
 			return currentDir, nil
 		}
