@@ -25,7 +25,7 @@ train:
 
 validation:
 	@echo ">> Building the est application..."
-	$(GO) build -o $(TEST_BIN) ./cmd/test/main.go
+	$(GO) build -o $(validation_BIN) ./cmd/test/main.go
 deps:
 	@echo ">> Downloading dependencies..."
 	$(GO) mod tidy
