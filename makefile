@@ -12,7 +12,7 @@ validation_BIN := $(BUILD_DIR)/test
 GOLINT_PATH := $(shell go env GOPATH)/bin
 all: build
 
-build: split train test
+build: split train validation
 
 
 split:
