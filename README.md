@@ -31,8 +31,9 @@ Unit tests have been implemented to verify the correctness of the key functions 
 
 
 TODO
-[] MAKEFILE
-[x] splitting program
-[] neural network class (logic)
-[] train neuralnetwork
-[] test neuralnetwork
+
+  [] MAKEFILE
+  [x] splitting program
+  [] neural network class (logic)
+  [] train neuralnetwork
+  [] test neuralnetwork
