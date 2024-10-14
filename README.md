@@ -25,11 +25,10 @@ The dataset is located in the resources folder. It includes 32 columns, where "d
 Unit tests have been implemented to verify the correctness of the key functions within the project. These tests ensure that the functions behave as expected and return the appropriate outputs.
 > make test_all
 
-
 TODO
 
-  [X] MAKEFILE
-  [x] splitting program
-  [] neural network class (logic)
-  [] train neuralnetwork
-  [] test neuralnetwork
+  - [X] MAKEFILE
+  - [X] splitting program
+  - [] neural network class (logic)
+  - [] train neuralnetwork
+  - [] test neuralnetwork
