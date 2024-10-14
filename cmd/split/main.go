@@ -17,5 +17,9 @@ func main() {
 		fmt.Print(parser.Usage(err))
 		return
 	}
-	data.TrainTestSplit(dataset, 0.2)
+	_, _, errTTS := data.TrainTestSplit(dataset, 0.2)
+	if errTTS != nil {
+		fmt.Println("Error", errTTS)
+		return
+	}
 }
