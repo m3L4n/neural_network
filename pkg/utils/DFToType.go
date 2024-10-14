@@ -2,10 +2,12 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/go-gota/gota/dataframe"
+	"gonum.org/v1/gonum/mat"
 )
 
 // DfToStringSlice take a dataset containing string and return a []string of the dataset
@@ -55,4 +57,34 @@ func DfToFloat64Slice(df dataframe.DataFrame) ([][]float64, error) {
 		dataSlice[idx] = dataRow
 	}
 	return dataSlice, nil
+}
+
+// DfToFloat64Matrix take a dataset containing float64 and return a [][]float64 (mat matrix type) of the dataset
+// important because df.Records return only [][]string
+func DfToFloat64Matrix(df dataframe.DataFrame) (mat.Matrix, error) {
+	records := df.Records()
+	sizeRecords := len(records)
+	if sizeRecords == 0 {
+		return nil, errors.New("data of the csv need to be more than 0")
+	}
+	records = records[1:]
+
+	dataSlice := mat.NewDense(sizeRecords, len(records[0]), nil)
+
+	for idx, row := range records {
+		dataRow := make([]float64, len(row))
+		for j, value := range row {
+
+			valueFloat, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				log.Printf("Error conversion '%s' at the row %d, column %d : %v\n", value, idx, j, err)
+				dataRow[j] = 0
+				continue
+			}
+			dataRow[j] = valueFloat
+		}
+		dataSlice.SetRow(idx, dataRow)
+	}
+	fmt.Println(dataSlice)
+	return nil, nil
 }
