@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/akamensky/argparse"
+	"github.com/go-gota/gota/dataframe"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 		fmt.Print(parser.Usage(err))
 		return
 	}
-	_, _, errTTS := data.TrainTestSplit(dataset, 0.2)
+	var df dataframe.DataFrame = dataframe.ReadCSV(dataset)
+	_, _, errTTS := data.TrainTestSplit(df, 0.25, true)
 	if errTTS != nil {
 		fmt.Println("Error", errTTS)
 		return

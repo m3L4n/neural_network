@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"neural_network/pkg/data"
-	"neural_network/pkg/nn"
 	"os"
 
 	"github.com/akamensky/argparse"
@@ -28,17 +27,23 @@ func main() {
 		fmt.Println("Error need to receives only postiv number ")
 		os.Exit(1)
 	}
-
-	data, labels, err := data.ProcessData(dataset)
+	xTrain, yTrain, xTest, yTest, err := data.ProcessData(dataset)
 	if err != nil {
 		fmt.Println("Error in cmd train", err)
 		return
 	}
-	neuralNetwork := nn.NeuralNetwork{}
-	neuralNetworkPtr, err := neuralNetwork.CreateNetwork(*batch, *hiddenLayer, *learningRate, data)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	neuralNetworkPtr.Fit(data, labels)
+	rowXTrain, columnXtrain := xTrain.Dims()
+	rowXTest, columnXtest := xTest.Dims()
+	fmt.Printf("x train shape ( %v , %v )\n", rowXTrain, columnXtrain)
+	fmt.Printf("x validation  shape ( %v , %v )\n", rowXTest, columnXtest)
+	fmt.Println(yTrain, yTest)
+	// neuralNetwork := nn.NeuralNetwork{}
+	// neuralNetworkPtr, err := neuralNetwork.CreateNetwork(*batch, *hiddenLayer, *epoch, *learningRate, data)
+	//
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		os.Exit(1)
+	//	}
+	//
+	// neuralNetworkPtr.Fit(data, labels)
 }

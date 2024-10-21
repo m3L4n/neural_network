@@ -2,23 +2,24 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/go-gota/gota/dataframe"
 	"gonum.org/v1/gonum/mat"
 )
-
+func isEmpty(df dataframe.DataFrame) bool {
+	// Check if the number of rows and columns is 0
+	return df.Nrow() == 0 || df.Ncol() == 0
+}
 // DfToStringSlice take a dataset containing string and return a []string of the dataset
 //
 //	important because df.Records() return [][]string
 func DfToStringSlice(df dataframe.DataFrame) ([]string, error) {
-	records := df.Records()
-	if len(records) == 0 {
+	if isEmpty(df){
 		return nil, errors.New("label (diagnosis) of the csv need to be more than 0")
 	}
-	records = records[1:]
+	records := df.Records()
 	var dataSlice = make([]string, len(records))
 	for idx, row := range records {
 		if len(row) == 0 {
@@ -34,11 +35,13 @@ func DfToStringSlice(df dataframe.DataFrame) ([]string, error) {
 // DfToFloat64Slice take a dataset containing float64 and return a [][]float64 of the dataset
 // important because df.Records return only [][]string
 func DfToFloat64Slice(df dataframe.DataFrame) ([][]float64, error) {
+		if isEmpty(df){
+		return nil, errors.New("features ( different than diagnosis or index ) of the csv need to be more than 0")
+	}
 	records := df.Records()
 	if len(records) == 0 {
 		return nil, errors.New("data of the csv need to be more than 0")
 	}
-	records = records[1:]
 	dataSlice := make([][]float64, len(records))
 
 	for idx, row := range records {
@@ -62,13 +65,15 @@ func DfToFloat64Slice(df dataframe.DataFrame) ([][]float64, error) {
 // DfToFloat64Matrix take a dataset containing float64 and return a [][]float64 (mat matrix type) of the dataset
 // important because df.Records return only [][]string
 func DfToFloat64Matrix(df dataframe.DataFrame) (mat.Matrix, error) {
+			if isEmpty(df){
+		return nil, errors.New("features ( different than diagnosis or index ) of the csv need to be more than 0")
+	}
 	records := df.Records()
 	sizeRecords := len(records)
+
 	if sizeRecords == 0 {
 		return nil, errors.New("data of the csv need to be more than 0")
 	}
-	records = records[1:]
-
 	dataSlice := mat.NewDense(sizeRecords, len(records[0]), nil)
 
 	for idx, row := range records {
@@ -85,6 +90,5 @@ func DfToFloat64Matrix(df dataframe.DataFrame) (mat.Matrix, error) {
 		}
 		dataSlice.SetRow(idx, dataRow)
 	}
-	fmt.Println(dataSlice)
-	return nil, nil
+	return dataSlice, nil
 }

@@ -3,10 +3,14 @@ package nn
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 
+	"github.com/fatih/color"
 	"gonum.org/v1/gonum/mat"
 )
+
+var ErrVectorLengthMismatch = errors.New("matrix rows must match vector length")
 
 // Layer structure represent one layer in the neural network
 // it can be a hidden layer or a input layer
@@ -28,6 +32,7 @@ type NeuralNetwork struct {
 	weight       map[string]mat.Matrix
 	bias         map[string]mat.Vector
 	data         mat.Matrix
+	epoch        int
 	// loss         func([]float32, []float32) float32
 }
 
@@ -43,7 +48,6 @@ func initWeight(layers []layer) (map[string]mat.Matrix, map[string]mat.Vector, e
 	weight := make(map[string]mat.Matrix, nLayers-1)
 	bias := make(map[string]mat.Vector, nLayers-1)
 	for idx, value := range layers {
-		fmt.Println(idx, value.nNeuron)
 		if idx == 0 {
 			continue
 		}
@@ -54,7 +58,7 @@ func initWeight(layers []layer) (map[string]mat.Matrix, map[string]mat.Vector, e
 }
 
 // CreateNetwork Permit to create network and initialize the weight for n layer and n neuron in each layer
-func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, learningRate float64, data mat.Matrix) (*NeuralNetwork, error) {
+func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, epoch int, learningRate float64, data mat.Matrix) (*NeuralNetwork, error) {
 	layerSize := len(layers)
 
 	layerTmp := make([]layer, layerSize+2)
@@ -92,52 +96,108 @@ func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, learningRate floa
 		learningRate: learningRate,
 		data:         data,
 		bias:         bias,
+		epoch:        epoch,
 	}, nil
 
 }
 
-func MatrixAddVec(matrix mat.Matrix, vector mat.Vector) mat.Matrix {
+func MatrixAddVec(matrix mat.Matrix, vector mat.Vector) (mat.Matrix, error) {
 	rowM, columnM := matrix.Dims()
+	fmt.Println(rowM, columnM, vector.Len())
+	if rowM != vector.Len() {
+		fmt.Println(("HELLo"))
+		return nil, ErrVectorLengthMismatch
+	}
 	vRep := mat.NewDense(rowM, columnM, nil)
 	var result mat.Dense
 
-	for i := 0; i < vRep.RawMatrix().Rows; i++ {
-		vRep.SetRow(i, mat.Col(nil, 0, vector))
+	for i := 0; i < vRep.RawMatrix().Cols; i++ {
+
+		vRep.SetCol(i, mat.Col(nil, 0, vector))
 	}
 	result.Add(matrix, vRep)
-	return &result
+	return &result, nil
 }
 
-func sigmoid(Z mat.Matrix) mat.Matrix {
-
-	var zInv mat.Dense
-	zInv.Scale(-1, Z)
-	Format(&zInv)
-	var matExp mat.Dense
-	matExp.Exp(&zInv)
-	rowExp, columnExp := matExp.Dims()
-	sliceOfOne := make([]float64, rowExp*columnExp)
-	for idx := range len(sliceOfOne) {
-		sliceOfOne[idx] = 1.
+func softmax(Z mat.Vector) mat.Matrix {
+	length := Z.Len()
+	result := mat.NewVecDense(length, nil)
+	prob := mat.NewVecDense(length, nil)
+	sum := 0.0
+	for i := 0; i < length; i++ {
+		tmpExp := math.Exp(Z.AtVec(i))
+		sum += tmpExp
+		result.SetVec(i, tmpExp)
 	}
-	matOfOne := mat.NewDense(rowExp, columnExp, sliceOfOne)
-	var addExp mat.Dense
-	addExp.Add(matOfOne, &matExp)
-	var sigmoidMatrix mat.Dense
-	sigmoidMatrix.DivElem(matOfOne, &addExp)
-	Format(&sigmoidMatrix)
-	return &sigmoidMatrix
+	for j := 0; j < length; j++ {
+		value := result.AtVec(j) / sum
+		prob.SetVec(j, value)
+	}
+	return prob
+}
+func sigmoid(Z mat.Matrix) mat.Matrix {
+	r, c := Z.Dims()
+	result := mat.NewDense(r, c, nil)
+	result.Apply(func(i, j int, v float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-v))
+	}, Z)
+	return result
 }
 func model(X mat.Matrix, weight mat.Matrix, bias mat.Vector) (mat.Matrix, error) {
 	var C mat.Dense
 	C.Mul(weight, X)
-	pred := MatrixAddVec(&C, bias)
+	Format(&C)
+	Format(bias)
+	pred, _ := MatrixAddVec(&C, bias)
+
 	A := sigmoid(pred)
 	return A, nil
 }
 
+func gradients(a1, a2, X, weight map[string]mat.Matrix, bias map[string]mat.Vector, y mat.Vector) {
+	//	sizeLabel := y.Len()
+	//
+	// dz2 := a2 -y
+	// dw2 :=  1/ sizeLabel * (dz2 * a1.T)
+	//
+	//	db2 := 1/sizeLabel * sum (dz2.col())
+	//	dz1 := (weight["W2"].T  * dz2) * a1 * (1 - a1)
+	//	dw1 :=  1/ sizeLabel * (dz1 * X.T)
+	//
+	// db1 := 1/sizeLabel * sum (dz1.col())
+	// return dz1, dw1, db1, dz2, dw2, db2
+}
+
+func update(dw1, dw2, db1, db2 mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) {
+	// weight["W1"] =  weight["W1"] - learning_rate * dw1
+	// weight["W2"] =  weight["W2"] - learning_rate * dw2
+	// bias["B1"] =  bias["B1"] - learning_rate * db1
+	// bias["B2"] =  bias["B2"] - learning_rate * db2
+	// return weight, bias
+
+}
+
+// func predict(X mat.Matrix,weight, activation mat.Matrix,  bias mat.Vector ){
+// 	a, _ := model(X,weight, bias )
+// 	return
+// }
+
 func (n *NeuralNetwork) Fit(X mat.Matrix, Y mat.Vector) (*NeuralNetwork, error) {
-	 model(n.weight["W2"], n.weight["W3"], n.bias["B3"]) // begin to end
+	red := color.New(color.FgRed, color.Bold).PrintfFunc()
+	blue := color.New(color.FgBlue, color.Bold).PrintfFunc()
+	red("Numbers of epoch %v\nLearning rate of %v\nBatch size %v\n", n.epoch, n.learningRate, n.batch)
+	for i := range n.epoch {
+		blue("Number of epoch %v/%v\n", i, n.epoch)
+
+	}
+	fmt.Println(n.epoch)
+	// fmt.Println(n.weight)
+	// Format(n.weight["W1"])
+	// Format(n.weight["W2"])
+	// a1, _ := model(X, n.weight["W1"], n.bias["B1"]) // begin to end
+	// Format(a1)
+	// a2, _ := model(a1, n.weight["W2"], n.bias["B2"])
+	// Format(a2)
 	//  back propagation // end to begin
 	// update weight and bias
 	return n, nil

@@ -4,6 +4,8 @@ import (
 	"neural_network/pkg/utils"
 	"os"
 	"testing"
+
+	"github.com/go-gota/gota/dataframe"
 )
 
 func openDataset() (*os.File, error) {
@@ -22,7 +24,8 @@ func TestSizeOfDF(t *testing.T) {
 		t.Fatalf("Cant open file : %v", err)
 	}
 	defer file.Close()
-	shuffledTrain, shuffledTest, err := TrainTestSplit(file, 0.3)
+	var df dataframe.DataFrame = dataframe.ReadCSV(file)
+	shuffledTrain, shuffledTest, err := TrainTestSplit(df, 0.3, false)
 	if err != nil {
 		t.Fatalf("Error in train test split : %v", err)
 	}
@@ -39,7 +42,8 @@ func TestSizeTestDataFrame(t *testing.T) {
 		t.Fatalf("Cant open file : %v", err)
 	}
 	defer file.Close()
-	_, shuffledTest, err := TrainTestSplit(file, 0.3)
+	var df dataframe.DataFrame = dataframe.ReadCSV(file)
+	_, shuffledTest, err := TrainTestSplit(df, 0.3, false)
 	if err != nil {
 		t.Fatalf("Error in train test split : %v", err)
 		totalRows := 568
@@ -55,7 +59,8 @@ func TestNoSameElem(t *testing.T) {
 		t.Fatalf("Cant open file : %v", err)
 	}
 	defer file.Close()
-	_, shuffledTest, err := TrainTestSplit(file, 0.3)
+	var df dataframe.DataFrame = dataframe.ReadCSV(file)
+	_, shuffledTest, err := TrainTestSplit(df, 0.3, false)
 	if err != nil {
 		t.Fatalf("Error in train test split : %v", err)
 		totalRows := 568
