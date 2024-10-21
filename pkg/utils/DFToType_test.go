@@ -10,14 +10,14 @@ import (
 
 func TestDfToStringSlice(t *testing.T) {
 	// Test empty DataFrame
-		stringData := [][]string{}
+	stringData := [][]string{}
 	df := dataframe.LoadRecords(stringData)
 	_, err := DfToStringSlice(df)
 	if err == nil {
 		t.Error("Expected an error for empty DataFrame, but got nil")
 	}
 
-// 	// Test correct DataFrame
+	// 	// Test correct DataFrame
 	correctDF := dataframe.LoadRecords([][]string{
 		{"Label"},
 		{"positive"},
@@ -25,8 +25,8 @@ func TestDfToStringSlice(t *testing.T) {
 		{"positive"},
 	})
 	result, err := DfToStringSlice(correctDF)
-	expected := []string{"Label","positive", "negative", "positive"}
-	if err != nil || len(result) != 4 || result[0] != "Label" || result[1] != "positive" || result[2] != "negative" || result[3] != "positive"  {
+	expected := []string{"positive", "negative", "positive"}
+	if err != nil || len(result) != 3 || result[0] != "positive" || result[1] != "negative" || result[2] != "positive" {
 		t.Errorf("Expected %v, but got %v, error: %v", expected, result, err)
 	}
 }
@@ -40,6 +40,7 @@ func TestDfToFloat64Slice(t *testing.T) {
 
 	// Test DataFrame with invalid data
 	invalidDF := dataframe.LoadRecords([][]string{
+		{"A", "B"},
 		{"1.0", "2.0"},
 		{"f32_17", "4.0"},
 	})
@@ -50,6 +51,7 @@ func TestDfToFloat64Slice(t *testing.T) {
 
 	// Test DataFrame with valid data
 	validDF := dataframe.LoadRecords([][]string{
+		{"A", "B"},
 		{"1.0", "2.0"},
 		{"3.0", "4.0"},
 	})
@@ -74,6 +76,7 @@ func TestDfToFloat64Matrix(t *testing.T) {
 
 	// Test DataFrame with invalid data
 	invalidDF := dataframe.LoadRecords([][]string{
+		{"A", "B"},
 		{"1.0", "2.0"},
 		{"f32_17", "4.0"},
 	})
@@ -84,6 +87,7 @@ func TestDfToFloat64Matrix(t *testing.T) {
 
 	// Test DataFrame with valid data
 	validDF := dataframe.LoadRecords([][]string{
+		{"A", "B"},
 		{"1.0", "2.0"},
 		{"3.0", "4.0"},
 	})

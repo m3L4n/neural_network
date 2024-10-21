@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"neural_network/pkg/data"
+	"neural_network/pkg/nn"
 	"os"
 
 	"github.com/akamensky/argparse"
@@ -32,18 +33,12 @@ func main() {
 		fmt.Println("Error in cmd train", err)
 		return
 	}
-	rowXTrain, columnXtrain := xTrain.Dims()
-	rowXTest, columnXtest := xTest.Dims()
-	fmt.Printf("x train shape ( %v , %v )\n", rowXTrain, columnXtrain)
-	fmt.Printf("x validation  shape ( %v , %v )\n", rowXTest, columnXtest)
-	fmt.Println(yTrain, yTest)
-	// neuralNetwork := nn.NeuralNetwork{}
-	// neuralNetworkPtr, err := neuralNetwork.CreateNetwork(*batch, *hiddenLayer, *epoch, *learningRate, data)
-	//
-	//	if err != nil {
-	//		fmt.Println(err)
-	//		os.Exit(1)
-	//	}
-	//
-	// neuralNetworkPtr.Fit(data, labels)
+
+	neuralNetwork := nn.NeuralNetwork{}
+	neuralNetworkPtr, err := neuralNetwork.CreateNetwork(*batch, *hiddenLayer, *epoch, *learningRate, xTrain)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	neuralNetworkPtr.Fit(xTrain, yTrain, xTest, yTest)
 }

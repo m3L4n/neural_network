@@ -67,6 +67,7 @@ func ProcessData(dataset *os.File) (mat.Matrix, mat.Vector, mat.Matrix, mat.Vect
 	var yTest = dfTest.Select("Diagnosis")
 	var xTrain = dfTrain.Drop([]string{"ID", "Diagnosis"})
 	var xTest = dfTest.Drop([]string{"ID", "Diagnosis"})
+
 	matrixXTrain, err := utils.DfToFloat64Slice(xTrain)
 	if err != nil {
 		return nil, nil, nil, nil, err

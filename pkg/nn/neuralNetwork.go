@@ -154,40 +154,117 @@ func model(X mat.Matrix, weight mat.Matrix, bias mat.Vector) (mat.Matrix, error)
 	return A, nil
 }
 
-func gradients(a1, a2, X, weight map[string]mat.Matrix, bias map[string]mat.Vector, y mat.Vector) {
-	//	sizeLabel := y.Len()
-	//
-	// dz2 := a2 -y
-	// dw2 :=  1/ sizeLabel * (dz2 * a1.T)
-	//
-	//	db2 := 1/sizeLabel * sum (dz2.col())
-	//	dz1 := (weight["W2"].T  * dz2) * a1 * (1 - a1)
-	//	dw1 :=  1/ sizeLabel * (dz1 * X.T)
-	//
-	// db1 := 1/sizeLabel * sum (dz1.col())
-	// return dz1, dw1, db1, dz2, dw2, db2
+func forward_propagation(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) map[string]mat.Matrix {
+fmt.Print("X SHAPE ",)
+	var activations = make(map[string]mat.Matrix, len(weight) + 1)
+	activations["A0"] = X
+	fmt.Println( X.Dims())
+	// sizeWeight := 1
+	// for i := range sizeWeight + 1{
+		idx := 1 
+	// 	if ( idx == sizeWeight + 1){
+	// 		break
+	// 	}
+		// var Z1Tmp mat.Dense
+		fmt.Println("idx",idx)
+fmt.Print("W SHAPE ",)
+		fmt.Println( weight["W" + strconv.Itoa(idx)].Dims())
+		fmt.Print("A SHAPE ",)
+		fmt.Println(activations["A" + strconv.Itoa(1 - 1)].Dims())
+		// Z1Tmp.Mul(activations["A" + strconv.Itoa(idx - 1)], weight["W" + strconv.Itoa(idx)]  )
+		// fmt.Print("z SHAPE ",)
+		// fmt.Println(Z1Tmp.Dims())     .
+		fmt.Print("B SHAPE ",)
+		fmt.Println( bias["B" + strconv.Itoa(idx)].Dims(), )
+
+	// }
+	// W1 := weight["W1"]
+	// b1 := bias["B1"]
+	// W2 := weight["W2"]
+	// b2 := bias["B2"]
+	// var Z1Tmp mat.Dense
+	// Z1Tmp.Mul(W1, X)
+	// z1, _ := MatrixAddVec(&Z1Tmp, b1)
+	// A1 := sigmoid(z1)
+	// var Z2Tmp mat.Dense
+	// Z2Tmp.Mul(W2, A1)
+	// z2, _ := MatrixAddVec(&Z2Tmp, b2)
+	// A2 := sigmoid(z2)
+	fmt.Println("len of weight", len(weight))
+	// activations["A1"] = A1
+	// activations["A2"] = A2
+	return activations
 }
 
-func update(dw1, dw2, db1, db2 mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) {
-	// weight["W1"] =  weight["W1"] - learning_rate * dw1
-	// weight["W2"] =  weight["W2"] - learning_rate * dw2
-	// bias["B1"] =  bias["B1"] - learning_rate * db1
-	// bias["B2"] =  bias["B2"] - learning_rate * db2
-	// return weight, bias
+func back_propagation(X, a1, a2 mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector, y mat.Vector) {
+	// m := y.Len()
+	// W2 := weight["W2"]
 
+	//   dz2 := a2 - y
+	//  dw2 := (1 / m ) * dz2 * a1.T
+	//  db2 := (1 / m ) * sum dz2 column  -> need to receive (n,1)
+	// dz1 := w2.T * dz2 * a1 * ( 1- a1)
+	// dw 1 := (1 / m ) * dz1 * x.T
+	//  db1 := (1 / m ) * sum dz1 column  -> need to receive (n,1)
+	//  return  dw1, db1, dw2, db2
 }
 
-// func predict(X mat.Matrix,weight, activation mat.Matrix,  bias mat.Vector ){
-// 	a, _ := model(X,weight, bias )
-// 	return
-// }
+func (n NeuralNetwork) update(dw1, dw2 mat.Matrix, db1, db2 mat.Vector, weight map[string]mat.Matrix, bias map[string]mat.Vector) (map[string]mat.Matrix, map[string]mat.Vector) {
+	W1 := weight["W1"]
+	W2 := weight["W2"]
+	var gradientW1Tmp mat.Dense
+	gradientW1Tmp.Scale(n.learningRate, dw1)
+	var gradientW1 mat.Dense
+	gradientW1.Sub(W1, &gradientW1Tmp)
+	var gradientW2Tmp mat.Dense
+	gradientW2Tmp.Scale(n.learningRate, dw2)
+	var gradientW2 mat.Dense
+	gradientW2.Sub(W2, &gradientW2Tmp)
 
-func (n *NeuralNetwork) Fit(X mat.Matrix, Y mat.Vector) (*NeuralNetwork, error) {
+	var newWeight = make(map[string]mat.Matrix, len(weight))
+	var newBias = make(map[string]mat.Vector, len(bias))
+	newWeight["W1"] = &gradientW1
+	newWeight["W2"] = &gradientW2
+
+	b1 := bias["B1"]
+	b2 := bias["B2"]
+
+	var gradientB1Tmp mat.VecDense
+	gradientB1Tmp.ScaleVec(n.learningRate, db1)
+	var gradientB1 mat.VecDense
+	gradientB1.SubVec(b1, &gradientB1Tmp)
+	var gradientB2Tmp mat.VecDense
+	gradientB2Tmp.ScaleVec(n.learningRate, db2)
+	var gradientB2 mat.VecDense
+	gradientB2.SubVec(b2, &gradientB2Tmp)
+	newBias["B1"] = &gradientB1
+	newBias["B2"] = &gradientB2
+	return newWeight, newBias
+}
+
+func predict(X, weight mat.Matrix, bias mat.Vector) {
+	model(X, weight, bias)
+
+	return
+}
+
+func (n *NeuralNetwork) Fit(XTrain mat.Matrix, YTrain mat.Vector, XTest mat.Matrix, YTest mat.Vector) (*NeuralNetwork, error) {
 	red := color.New(color.FgRed, color.Bold).PrintfFunc()
 	blue := color.New(color.FgBlue, color.Bold).PrintfFunc()
+	XTrain = XTrain.T()
+	// YTTrain := YTrain.T()
+	XTest = XTest.T()
+	// YTTest := YTest.T()
+	rowXTrain, columnXtrain := XTrain.Dims()
+	rowXTest, columnXtest := XTest.Dims()
+	fmt.Printf("x train shape ( %v , %v )\n", rowXTrain, columnXtrain)
+	fmt.Printf("x validation  shape ( %v , %v )\n", rowXTest, columnXtest)
 	red("Numbers of epoch %v\nLearning rate of %v\nBatch size %v\n", n.epoch, n.learningRate, n.batch)
 	for i := range n.epoch {
 		blue("Number of epoch %v/%v\n", i, n.epoch)
+		forward_propagation(XTrain, n.weight, n.bias)
+		// Format(activation["A1"])
+		// Format(activation["A2"])
 
 	}
 	fmt.Println(n.epoch)
