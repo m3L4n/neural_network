@@ -33,7 +33,10 @@ func main() {
 		fmt.Println("Error in cmd train", err)
 		return
 	}
-
+	xTrain = xTrain.T()
+	xTest = xTest.T()
+	// yTrain = yTrain.T()
+	// yTest = yTest.T()
 	neuralNetwork := nn.NeuralNetwork{}
 	neuralNetworkPtr, err := neuralNetwork.CreateNetwork(*batch, *hiddenLayer, *epoch, *learningRate, xTrain)
 	if err != nil {

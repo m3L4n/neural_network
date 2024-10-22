@@ -51,6 +51,7 @@ func initWeight(layers []layer) (map[string]mat.Matrix, map[string]mat.Vector, e
 		if idx == 0 {
 			continue
 		}
+		fmt.Println("HEELO", idx,value.nNeuron, layers[idx-1].nNeuron )
 		bias["B"+strconv.Itoa(idx)] = mat.NewVecDense(value.nNeuron, nil)
 		weight["W"+strconv.Itoa(idx)] = mat.NewDense(value.nNeuron, layers[idx-1].nNeuron, nil)
 	}
@@ -63,6 +64,7 @@ func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, epoch int, learni
 
 	layerTmp := make([]layer, layerSize+2)
 	rowData, _ := data.Dims()
+	fmt.Println("ROW data", rowData)
 	layerTmp[0] = layer{
 		nNeuron:     rowData,
 		hiddenLayer: true,
@@ -79,7 +81,7 @@ func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, epoch int, learni
 		}
 	}
 	layerTmp[layerSize+1] = layer{
-		nNeuron:     2,
+		nNeuron:     1,
 		hiddenLayer: false,
 		outputLayer: true,
 		inputLayer:  false,
@@ -103,9 +105,7 @@ func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, epoch int, learni
 
 func MatrixAddVec(matrix mat.Matrix, vector mat.Vector) (mat.Matrix, error) {
 	rowM, columnM := matrix.Dims()
-	fmt.Println(rowM, columnM, vector.Len())
 	if rowM != vector.Len() {
-		fmt.Println(("HELLo"))
 		return nil, ErrVectorLengthMismatch
 	}
 	vRep := mat.NewDense(rowM, columnM, nil)
@@ -155,49 +155,68 @@ func model(X mat.Matrix, weight mat.Matrix, bias mat.Vector) (mat.Matrix, error)
 }
 
 func forward_propagation(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) map[string]mat.Matrix {
-fmt.Print("X SHAPE ",)
 	var activations = make(map[string]mat.Matrix, len(weight) + 1)
 	activations["A0"] = X
-	fmt.Println( X.Dims())
-	// sizeWeight := 1
-	// for i := range sizeWeight + 1{
-		idx := 1 
-	// 	if ( idx == sizeWeight + 1){
-	// 		break
-	// 	}
-		// var Z1Tmp mat.Dense
-		fmt.Println("idx",idx)
-fmt.Print("W SHAPE ",)
-		fmt.Println( weight["W" + strconv.Itoa(idx)].Dims())
-		fmt.Print("A SHAPE ",)
-		fmt.Println(activations["A" + strconv.Itoa(1 - 1)].Dims())
-		// Z1Tmp.Mul(activations["A" + strconv.Itoa(idx - 1)], weight["W" + strconv.Itoa(idx)]  )
-		// fmt.Print("z SHAPE ",)
-		// fmt.Println(Z1Tmp.Dims())     .
-		fmt.Print("B SHAPE ",)
-		fmt.Println( bias["B" + strconv.Itoa(idx)].Dims(), )
-
-	// }
-	// W1 := weight["W1"]
-	// b1 := bias["B1"]
-	// W2 := weight["W2"]
-	// b2 := bias["B2"]
-	// var Z1Tmp mat.Dense
-	// Z1Tmp.Mul(W1, X)
-	// z1, _ := MatrixAddVec(&Z1Tmp, b1)
-	// A1 := sigmoid(z1)
-	// var Z2Tmp mat.Dense
-	// Z2Tmp.Mul(W2, A1)
-	// z2, _ := MatrixAddVec(&Z2Tmp, b2)
-	// A2 := sigmoid(z2)
-	fmt.Println("len of weight", len(weight))
-	// activations["A1"] = A1
-	// activations["A2"] = A2
+	sizeWeight := len(weight)
+	for i := range sizeWeight + 1{
+		idx := i +1
+		if ( idx == sizeWeight + 1){
+			break
+		}
+		var Z1Tmp mat.Dense
+		Z1Tmp.Mul( weight["W" + strconv.Itoa(idx)], activations["A" + strconv.Itoa(idx - 1)]  )
+		Z , err := MatrixAddVec(&Z1Tmp, bias["B" +strconv.Itoa(idx) ])
+		if (err != nil){
+			fmt.Println("Error on add vector and matrix", err)
+		}
+		activations["A" + strconv.Itoa(idx)] = sigmoid(Z)
+	fmt.Println(activations["A" + strconv.Itoa(idx)].Dims())
+	}
 	return activations
 }
 
-func back_propagation(X, a1, a2 mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector, y mat.Vector) {
-	// m := y.Len()
+func sumVectorT( vectorT mat.Matrix) (float64, error){
+	r,c := vectorT.Dims()
+	// resul := mat.NewDense(r, 1, nil)
+	// var test mat.Dense
+	// if ( r != 1){
+	// 		return sum, errors.New("error row of the vector Transpose need to have a len of row  at 1")
+	// }
+	test := mat.Sum(vectorT)
+	fmt.Println(test,r,c)
+	// Format(test)
+	for i := range r {
+		fmt.Println("cc",i)
+		vectorT.row(i)
+	}
+	return 0.0 , nil
+}
+
+func back_propagation(X mat.Matrix , y mat.Matrix ,activations map[string]mat.Matrix , weight map[string]mat.Matrix, bias map[string]mat.Vector, ) {
+	_, c := y.Dims()
+	fmt.Println(len(weight), len(bias))
+	// var gradientsWeight = make(map[string]mat.Matrix, len(weight) + 1)
+	// var gradientsBias = make(map[string]mat.Matrix, len(weight) + 1)
+	sizeWeight := len(weight)
+	// // fmt.Println("dim",r,c, sizeWeight)
+	dzTmp := activations["A"+ strconv.Itoa(sizeWeight)]
+	var  dz mat.Dense
+	dz.Sub(dzTmp, y)
+	multiplier :=  1/ c
+	for i := sizeWeight   ; i > 0 ; i--{
+
+	var  dw mat.Dense
+		dw.Mul(&dz,activations["A" +  strconv.Itoa(i - 1)].T() )
+		dw.Scale(float64(multiplier), &dw)
+		sumVectorT(&dz)
+	// var  db mat.Dense
+			//  db multiplier * sum de column de dz
+
+// if ( i > 1){
+// 	// dz = (weight["W" + strconv.Itoa(i)].T) * dz * activations["W" + strconv.Itoa(i -1 )] * (1 -  activations["W" + strconv.Itoa(i -1 )] )
+// }
+
+	}
 	// W2 := weight["W2"]
 
 	//   dz2 := a2 - y
@@ -251,31 +270,22 @@ func predict(X, weight mat.Matrix, bias mat.Vector) {
 func (n *NeuralNetwork) Fit(XTrain mat.Matrix, YTrain mat.Vector, XTest mat.Matrix, YTest mat.Vector) (*NeuralNetwork, error) {
 	red := color.New(color.FgRed, color.Bold).PrintfFunc()
 	blue := color.New(color.FgBlue, color.Bold).PrintfFunc()
-	XTrain = XTrain.T()
-	// YTTrain := YTrain.T()
-	XTest = XTest.T()
-	// YTTest := YTest.T()
 	rowXTrain, columnXtrain := XTrain.Dims()
 	rowXTest, columnXtest := XTest.Dims()
+	YTrainT := YTrain.T()
 	fmt.Printf("x train shape ( %v , %v )\n", rowXTrain, columnXtrain)
 	fmt.Printf("x validation  shape ( %v , %v )\n", rowXTest, columnXtest)
 	red("Numbers of epoch %v\nLearning rate of %v\nBatch size %v\n", n.epoch, n.learningRate, n.batch)
 	for i := range n.epoch {
 		blue("Number of epoch %v/%v\n", i, n.epoch)
-		forward_propagation(XTrain, n.weight, n.bias)
+		activations := forward_propagation(XTrain, n.weight, n.bias)
+		// fmt.Println(YTrainT.Dims())
+		// Format(YTrain.T())
+		// Format(activations["A2"])
+		back_propagation(XTrain, YTrainT, activations, n.weight, n.bias)
 		// Format(activation["A1"])
 		// Format(activation["A2"])
 
 	}
-	fmt.Println(n.epoch)
-	// fmt.Println(n.weight)
-	// Format(n.weight["W1"])
-	// Format(n.weight["W2"])
-	// a1, _ := model(X, n.weight["W1"], n.bias["B1"]) // begin to end
-	// Format(a1)
-	// a2, _ := model(a1, n.weight["W2"], n.bias["B2"])
-	// Format(a2)
-	//  back propagation // end to begin
-	// update weight and bias
 	return n, nil
 }
