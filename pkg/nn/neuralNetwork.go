@@ -240,9 +240,9 @@ func back_propagation(X mat.Matrix, y mat.Matrix, activations map[string]mat.Mat
 			newDzTmp.Mul(weight["W"+strconv.Itoa(i)].T(), &dz)
 			var newDz mat.Dense
 			newDz.Mul(&newDzTmp, activations["A"+strconv.Itoa(i-1)].T())
-			subMatrux := subMatrixScalar(1, activations["A"+strconv.Itoa(i-1)])
+			subMatrix := subMatrixScalar(1, activations["A"+strconv.Itoa(i-1)])
 			var newDz1 mat.Dense
-			newDz1.Mul(&newDz, &subMatrux)
+			newDz1.Mul(&newDz, &subMatrix)
 			dz = newDz1
 		}
 	}
@@ -269,13 +269,29 @@ func (n *NeuralNetwork) update(gw, gb map[string]mat.Matrix) {
 
 }
 
-func predict(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) {
+func argMax( a mat.Matrix) mat.Vector{
+	r, c := a.Dims()
+	var maxArg =   mat.NewVecDense(c, nil)
+	for i := range c{
+		var max = -1.0
+		for row := range r{
+			value := a.At(row, i)
+			if (max < value){
+				max = value
+			}
+		}
+		maxArg.SetVec(i, max)
+	}
+	return maxArg
+}
+
+func predict(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) mat.Vector {
 	  activations := forward_propagation(X, weight, bias)
 		finalSize := len(weight)
 		aF := activations["A" + strconv.Itoa(finalSize)]
-		//  make a arg max of af to get the right prediction
+		res := argMax(aF)
 
-	return
+	return res
 }
 
 func (n *NeuralNetwork) Fit(XTrain mat.Matrix, YTrain mat.Vector, XTest mat.Matrix, YTest mat.Vector) (*NeuralNetwork, error) {
@@ -296,6 +312,7 @@ func (n *NeuralNetwork) Fit(XTrain mat.Matrix, YTrain mat.Vector, XTest mat.Matr
 		activations := forward_propagation(XTrain, n.weight, n.bias)
 		gw, gb := back_propagation(XTrain, yTrainEncoded, activations, n.weight, n.bias)
 		n.update(gw, gb)
+		
 
 	}
 	return n, nil
