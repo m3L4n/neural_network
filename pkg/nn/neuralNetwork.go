@@ -51,7 +51,7 @@ func initWeight(layers []layer) (map[string]mat.Matrix, map[string]mat.Vector, e
 		if idx == 0 {
 			continue
 		}
-		fmt.Println("HEELO", idx,value.nNeuron, layers[idx-1].nNeuron )
+		fmt.Println("HEELO", idx, value.nNeuron, layers[idx-1].nNeuron)
 		bias["B"+strconv.Itoa(idx)] = mat.NewVecDense(value.nNeuron, nil)
 		weight["W"+strconv.Itoa(idx)] = mat.NewDense(value.nNeuron, layers[idx-1].nNeuron, nil)
 	}
@@ -81,7 +81,7 @@ func (n *NeuralNetwork) CreateNetwork(batch int, layers []int, epoch int, learni
 		}
 	}
 	layerTmp[layerSize+1] = layer{
-		nNeuron:     1,
+		nNeuron:     2,
 		hiddenLayer: false,
 		outputLayer: true,
 		inputLayer:  false,
@@ -155,114 +155,125 @@ func model(X mat.Matrix, weight mat.Matrix, bias mat.Vector) (mat.Matrix, error)
 }
 
 func forward_propagation(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) map[string]mat.Matrix {
-	var activations = make(map[string]mat.Matrix, len(weight) + 1)
+	var activations = make(map[string]mat.Matrix, len(weight)+1)
 	activations["A0"] = X
 	sizeWeight := len(weight)
-	for i := range sizeWeight + 1{
-		idx := i +1
-		if ( idx == sizeWeight + 1){
+	for i := range sizeWeight + 1 {
+		idx := i + 1
+		if idx == sizeWeight+1 {
 			break
 		}
 		var Z1Tmp mat.Dense
-		Z1Tmp.Mul( weight["W" + strconv.Itoa(idx)], activations["A" + strconv.Itoa(idx - 1)]  )
-		Z , err := MatrixAddVec(&Z1Tmp, bias["B" +strconv.Itoa(idx) ])
-		if (err != nil){
+		Z1Tmp.Mul(weight["W"+strconv.Itoa(idx)], activations["A"+strconv.Itoa(idx-1)])
+		Z, err := MatrixAddVec(&Z1Tmp, bias["B"+strconv.Itoa(idx)])
+		if err != nil {
 			fmt.Println("Error on add vector and matrix", err)
 		}
-		activations["A" + strconv.Itoa(idx)] = sigmoid(Z)
-	fmt.Println(activations["A" + strconv.Itoa(idx)].Dims())
+		activations["A"+strconv.Itoa(idx)] = sigmoid(Z)
+		fmt.Println(activations["A"+strconv.Itoa(idx)].Dims())
 	}
 	return activations
 }
 
-func sumVectorT( vectorT mat.Matrix) (float64, error){
-	r,c := vectorT.Dims()
-	// resul := mat.NewDense(r, 1, nil)
-	// var test mat.Dense
-	// if ( r != 1){
-	// 		return sum, errors.New("error row of the vector Transpose need to have a len of row  at 1")
-	// }
-	test := mat.Sum(vectorT)
-	fmt.Println(test,r,c)
-	// Format(test)
+func sumVectorT(vectorT mat.Matrix) (mat.Dense, error) {
+	r, _ := vectorT.Dims()
+	result := mat.NewDense(r, 1, nil)
+	denseMatrix := mat.DenseCopyOf(vectorT)
 	for i := range r {
-		fmt.Println("cc",i)
-		vectorT.row(i)
+		row := denseMatrix.RowView(i)
+		sum := mat.Sum(row)
+		result.Set(i, 0, sum)
 	}
-	return 0.0 , nil
+
+	return *result, nil
 }
 
-func back_propagation(X mat.Matrix , y mat.Matrix ,activations map[string]mat.Matrix , weight map[string]mat.Matrix, bias map[string]mat.Vector, ) {
+func oneHotEncoding(y mat.Matrix) (mat.Matrix, error) {
 	_, c := y.Dims()
-	fmt.Println(len(weight), len(bias))
-	// var gradientsWeight = make(map[string]mat.Matrix, len(weight) + 1)
-	// var gradientsBias = make(map[string]mat.Matrix, len(weight) + 1)
-	sizeWeight := len(weight)
-	// // fmt.Println("dim",r,c, sizeWeight)
-	dzTmp := activations["A"+ strconv.Itoa(sizeWeight)]
-	var  dz mat.Dense
-	dz.Sub(dzTmp, y)
-	multiplier :=  1/ c
-	for i := sizeWeight   ; i > 0 ; i--{
-
-	var  dw mat.Dense
-		dw.Mul(&dz,activations["A" +  strconv.Itoa(i - 1)].T() )
-		dw.Scale(float64(multiplier), &dw)
-		sumVectorT(&dz)
-	// var  db mat.Dense
-			//  db multiplier * sum de column de dz
-
-// if ( i > 1){
-// 	// dz = (weight["W" + strconv.Itoa(i)].T) * dz * activations["W" + strconv.Itoa(i -1 )] * (1 -  activations["W" + strconv.Itoa(i -1 )] )
-// }
-
+	newMatrix := mat.NewDense(2, c, nil)
+	for i := range c {
+		label := y.At(0, i)
+		if label == 0.0 {
+			newMatrix.Set(0, i, 0.0)
+			newMatrix.Set(1, i, 1.0)
+		} else if label == 1.0 {
+			newMatrix.Set(0, i, 1.0)
+			newMatrix.Set(1, i, 0.0)
+		} else {
+			fmt.Println("Error in the labels, value need to be 1.0 or 0.0")
+			return nil, errors.New("Error in the labels, value need to be 1.0 or 0.0")
+		}
 	}
-	// W2 := weight["W2"]
-
-	//   dz2 := a2 - y
-	//  dw2 := (1 / m ) * dz2 * a1.T
-	//  db2 := (1 / m ) * sum dz2 column  -> need to receive (n,1)
-	// dz1 := w2.T * dz2 * a1 * ( 1- a1)
-	// dw 1 := (1 / m ) * dz1 * x.T
-	//  db1 := (1 / m ) * sum dz1 column  -> need to receive (n,1)
-	//  return  dw1, db1, dw2, db2
+	return newMatrix, nil
 }
 
-func (n NeuralNetwork) update(dw1, dw2 mat.Matrix, db1, db2 mat.Vector, weight map[string]mat.Matrix, bias map[string]mat.Vector) (map[string]mat.Matrix, map[string]mat.Vector) {
-	W1 := weight["W1"]
-	W2 := weight["W2"]
-	var gradientW1Tmp mat.Dense
-	gradientW1Tmp.Scale(n.learningRate, dw1)
-	var gradientW1 mat.Dense
-	gradientW1.Sub(W1, &gradientW1Tmp)
-	var gradientW2Tmp mat.Dense
-	gradientW2Tmp.Scale(n.learningRate, dw2)
-	var gradientW2 mat.Dense
-	gradientW2.Sub(W2, &gradientW2Tmp)
-
-	var newWeight = make(map[string]mat.Matrix, len(weight))
-	var newBias = make(map[string]mat.Vector, len(bias))
-	newWeight["W1"] = &gradientW1
-	newWeight["W2"] = &gradientW2
-
-	b1 := bias["B1"]
-	b2 := bias["B2"]
-
-	var gradientB1Tmp mat.VecDense
-	gradientB1Tmp.ScaleVec(n.learningRate, db1)
-	var gradientB1 mat.VecDense
-	gradientB1.SubVec(b1, &gradientB1Tmp)
-	var gradientB2Tmp mat.VecDense
-	gradientB2Tmp.ScaleVec(n.learningRate, db2)
-	var gradientB2 mat.VecDense
-	gradientB2.SubVec(b2, &gradientB2Tmp)
-	newBias["B1"] = &gradientB1
-	newBias["B2"] = &gradientB2
-	return newWeight, newBias
+func subMatrixScalar(scalar float64, matrix mat.Matrix) mat.Dense {
+	r, c := matrix.Dims()
+	var sliceScalar = make([]float64, r*c)
+	matrixScalar := mat.NewDense(r, c, sliceScalar)
+	var result mat.Dense
+	result.Sub(matrixScalar, matrix)
+	return result
+}
+func back_propagation(X mat.Matrix, y mat.Matrix, activations map[string]mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) (map[string]mat.Matrix, map[string]mat.Matrix) {
+	_, c := y.Dims()
+	var gradientsWeight = make(map[string]mat.Matrix, len(weight)+1)
+	var gradientsBias = make(map[string]mat.Matrix, len(weight)+1)
+	sizeWeight := len(weight)
+	dzTmp := activations["A"+strconv.Itoa(sizeWeight)]
+	var dz mat.Dense
+	dz.Sub(dzTmp, y)
+	multiplier := 1 / c
+	for i := sizeWeight; i > 0; i-- {
+		var dw mat.Dense
+		dw.Mul(&dz, activations["A"+strconv.Itoa(i-1)].T())
+		dw.Scale(float64(multiplier), &dw)
+		gradientsWeight["dW"+strconv.Itoa(i)] = &dw
+		gradientsBias["dB"+strconv.Itoa(i)] = &dw
+		db, errSum := sumVectorT(&dz)
+		if errSum != nil {
+			fmt.Println("error", nil)
+		}
+		db.Scale(float64(multiplier), &db)
+		if i > 1 {
+			var newDzTmp mat.Dense
+			newDzTmp.Mul(weight["W"+strconv.Itoa(i)].T(), &dz)
+			var newDz mat.Dense
+			newDz.Mul(&newDzTmp, activations["A"+strconv.Itoa(i-1)].T())
+			subMatrux := subMatrixScalar(1, activations["A"+strconv.Itoa(i-1)])
+			var newDz1 mat.Dense
+			newDz1.Mul(&newDz, &subMatrux)
+			dz = newDz1
+		}
+	}
+	return gradientsWeight, gradientsBias
 }
 
-func predict(X, weight mat.Matrix, bias mat.Vector) {
-	model(X, weight, bias)
+func (n *NeuralNetwork) update(gw, gb map[string]mat.Matrix) {
+	c := len(gw)
+	for i := range c {
+		if ( i == 0){
+			continue
+		}
+		var gd mat.Dense
+		gd.Scale(n.learningRate, gw["dW"+strconv.Itoa(i)])
+		var newWeight mat.Dense
+		newWeight.Sub(n.bias["W"+strconv.Itoa(i)], &gd)
+		n.weight["W"+strconv.Itoa(i)] = &newWeight
+		var gdB mat.Dense
+		gdB.Scale(n.learningRate, gb["dB"+strconv.Itoa(i)])
+		var newBias mat.Dense
+		newBias.Sub(n.bias["B"+strconv.Itoa(i)], &gdB)
+		// n.bias["B" + strconv.Itoa(i)] = &newBias
+	}
+
+}
+
+func predict(X mat.Matrix, weight map[string]mat.Matrix, bias map[string]mat.Vector) {
+	  activations := forward_propagation(X, weight, bias)
+		finalSize := len(weight)
+		aF := activations["A" + strconv.Itoa(finalSize)]
+		//  make a arg max of af to get the right prediction
 
 	return
 }
@@ -273,18 +284,18 @@ func (n *NeuralNetwork) Fit(XTrain mat.Matrix, YTrain mat.Vector, XTest mat.Matr
 	rowXTrain, columnXtrain := XTrain.Dims()
 	rowXTest, columnXtest := XTest.Dims()
 	YTrainT := YTrain.T()
+	yTrainEncoded, err := oneHotEncoding(YTrainT)
+	if err != nil {
+		return nil, err
+	}
 	fmt.Printf("x train shape ( %v , %v )\n", rowXTrain, columnXtrain)
 	fmt.Printf("x validation  shape ( %v , %v )\n", rowXTest, columnXtest)
 	red("Numbers of epoch %v\nLearning rate of %v\nBatch size %v\n", n.epoch, n.learningRate, n.batch)
 	for i := range n.epoch {
 		blue("Number of epoch %v/%v\n", i, n.epoch)
 		activations := forward_propagation(XTrain, n.weight, n.bias)
-		// fmt.Println(YTrainT.Dims())
-		// Format(YTrain.T())
-		// Format(activations["A2"])
-		back_propagation(XTrain, YTrainT, activations, n.weight, n.bias)
-		// Format(activation["A1"])
-		// Format(activation["A2"])
+		gw, gb := back_propagation(XTrain, yTrainEncoded, activations, n.weight, n.bias)
+		n.update(gw, gb)
 
 	}
 	return n, nil
