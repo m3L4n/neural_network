@@ -21,7 +21,7 @@ type LayerDense struct {
 
 type ActivationReLu struct {
 	Output t.Tensor
-	Input t.Tensor
+	Input  t.Tensor
 	DInput t.Tensor
 }
 
@@ -32,7 +32,7 @@ func NewActivation() ActivationReLu {
 func (a *ActivationReLu) Forward(inputs t.Tensor) {
 	a.Input = inputs
 	zeros := t.New(t.WithShape(inputs.Shape()...), t.Of(t.Float64))
-	output, err := t.MaxBetween(zeros,inputs)
+	output, err := t.MaxBetween(zeros, inputs)
 	handleError(err)
 
 	a.Output = output
@@ -41,24 +41,24 @@ func (a *ActivationReLu) Forward(inputs t.Tensor) {
 func (a *ActivationReLu) Backward(dvalues t.Tensor) {
 	output := dvalues.Clone().(t.Tensor)
 	shapeDvalues := dvalues.Shape()
-	for i:= 0 ; i < shapeDvalues[0]; i++{
+	for i := 0; i < shapeDvalues[0]; i++ {
 
-		for j := 0; j < shapeDvalues[1]; j++{
-			valueInput, err := a.Input.At(i,j)
+		for j := 0; j < shapeDvalues[1]; j++ {
+			valueInput, err := a.Input.At(i, j)
 			handleError(err)
 			valueInputF := valueInput.(float64)
-			if (valueInputF <= 0){
-				output.SetAt(0.0, i,j)
+			if valueInputF <= 0 {
+				output.SetAt(0.0, i, j)
 			}
 		}
 
-	} 
+	}
 	a.DInput = output
 }
 
 type ActivationSoftmax struct {
 	Outpout t.Tensor
-	DInput t.Tensor
+	DInput  t.Tensor
 }
 
 func NewActivationSoftmax() ActivationSoftmax {
@@ -105,24 +105,24 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 
 }
 
-func (s *ActivationSoftmax)Backward(dvalues, y t.Tensor) (error){
+func (s *ActivationSoftmax) Backward(dvalues, y t.Tensor) error {
 	shapeY := y.Shape()
 	shapeDValues := dvalues.Shape()
 
 	outpout := dvalues.Clone().(t.Tensor)
-	if (shapeY[0] != shapeDValues[0]){
+	if shapeY[0] != shapeDValues[0] {
 		return errors.New("Error shape 1 of y and dvalues  need to be the same")
 	}
-	 for i:= 0; i< shapeY[0] ; i++{
-		valueY , err :=y.At(i, 0)
+	for i := 0; i < shapeY[0]; i++ {
+		valueY, err := y.At(i, 0)
 		handleError(err)
 		value, err := dvalues.At(i, int(valueY.(float64)))
-		outpout.SetAt(((value.(float64) - 1. ) ), i,int(valueY.(float64)) )
-		
+		outpout.SetAt((value.(float64) - 1.), i, int(valueY.(float64)))
+
 	}
 	normFactor := float64(shapeY[0])
-	ouputNormTmp  := outpout.Clone().(t.Tensor) 
-	 ouputNorm, err:= ouputNormTmp.Apply(func (x float64) float64  {
+	ouputNormTmp := outpout.Clone().(t.Tensor)
+	ouputNorm, err := ouputNormTmp.Apply(func(x float64) float64 {
 		return x / normFactor
 	})
 	handleError(err)
@@ -155,33 +155,15 @@ func NewLayerDense(n_input, n_neuron int) LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
 	stdDev := math.Sqrt(2.0 / float64(n_input))
 	weight, err := weightCopy.MulScalar(stdDev, false)
-// 		weight := t.New(t.WithShape(2, 3), t.WithBacking([]float64{-0.01306527 , 0.01658131 ,-0.00118164,
-//  -0.00680178 , 0.00666383 ,-0.0046072 }))
 	handleError(err)
 	bias := t.New(t.WithShape(1, n_neuron), t.Of(t.Float64))
 	return LayerDense{Weight: weight, Bias: bias, input: t.New(t.Of(t.Float64))}
 }
 
-func Relu(inputs t.Tensor) {
-
-	input := []float32{0, 2, -1, 3.3, -2.7, 1.1, 2.2 - 100}
-	output := make([]float32, len(input))
-	for i, value := range input {
-		if value > 0 {
-			output[i] = value
-		} else {
-			output[i] = 0
-		}
-
-	}
-}
-
 func (l *LayerDense) Foward(inputs t.Tensor) {
 	l.input = inputs
-	// fmt.Println("WEIGHT in foward", l.Weight)
 	dP, err := t.Dot(inputs, l.Weight)
 	handleError(err)
-	// fmt.Print("foward",inputs, l.Weight)
 	if len(dP.Shape()) == 1 {
 		dP.Reshape(dP.Shape()[0], 1)
 	}
@@ -216,11 +198,11 @@ func handleError(err error) {
 }
 
 func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
-	
+
 	newYPred := Argmax(yPred)
 	shapeY := y.Shape()
 	shapeYPred := newYPred.Shape()
-	if shapeY[0] != shapeYPred[0]  {
+	if shapeY[0] != shapeYPred[0] {
 		return 0, errors.New("shape of prediction and labels have to be the same")
 	}
 	epsilon := 1e-10
@@ -234,7 +216,7 @@ func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
 	// 	}else if (value.(float64) > 1- epsilon ){
 	// 		newYPredClipped.SetAt(1.0 - epsilon, i, 0)
 	// 	}else{
-	// 	newYPredClipped.SetAt(value.(float64), i, 0)	
+	// 	newYPredClipped.SetAt(value.(float64), i, 0)
 	// 	}
 	// }
 	var bce = 0.0
@@ -251,59 +233,63 @@ func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
 	return -bce / float64(shapeY[0]), nil
 }
 
-
-
-func Argmax(yPred t.Tensor) t.Tensor{
+func Argmax(yPred t.Tensor) t.Tensor {
 	shapeYPred := yPred.Shape()
+	fmt.Println("ARGMAX", shapeYPred)
 	newYPred := t.New(t.WithShape(yPred.Shape()[0], 1), t.Of(t.Float64))
-	for i := 0 ; i < shapeYPred[0];  i ++{
+	for i := 0; i < shapeYPred[0]; i++ {
 		indexMax := 0
-		valueMax, err := yPred.At(i,indexMax)
+		valueMax, err := yPred.At(i, indexMax)
 		handleError(err)
-		for j := 0 ; j < shapeYPred[1]; j++{
-			valueTmp , err := yPred.At(i, j)
+		for j := 0; j < shapeYPred[1]; j++ {
+			valueTmp, err := yPred.At(i, j)
 			handleError(err)
-			if (valueMax.(float64)) < valueTmp.(float64){
-				valueMax =  valueTmp
+			if (valueMax.(float64)) < valueTmp.(float64) {
+				valueMax = valueTmp
 				indexMax = j
-			} 
+			}
 		}
-		newYPred.SetAt( float64(indexMax), i, 0)
-	}	
+		newYPred.SetAt(float64(indexMax), i, 0)
+	}
 	return newYPred
 }
-func Accuracy(yPred, yTrue t.Tensor) float64{
+func Accuracy(yPred, yTrue t.Tensor) float64 {
 
 	newYPred := Argmax(yPred)
+	for idx := 0 ; idx <  yTrue.Shape()[0]; idx++{
+		fmt.Println(newYPred.At(idx,0))
+	}
+	fmt.Println(newYPred.Shape()[0], yTrue.Shape()[0])
 	predictionSum := 0
-	for idx := 0 ; idx < yTrue.Shape()[0]; idx++{
-		classPred , err := newYPred.At(idx,0)
+	for idx := 0; idx < yTrue.Shape()[0]; idx++ {
+		classPred, err := newYPred.At(idx, 0)
 		handleError(err)
 		classTrue, err := yTrue.At(idx, 0)
 		handleError(err)
-		if ( classPred.(float64) == classTrue.(float64) ){
+		if classPred.(float64) == classTrue.(float64) {
 			predictionSum += 1
-		}else{
+		} else {
 			predictionSum += 0
 		}
 	}
 	var meanAccuracy float64 = float64(predictionSum) / float64(yTrue.Shape()[0])
 	return meanAccuracy
 }
+
 type OptimizerGd struct {
 	LearningRate float64
 }
 
-func NewOptimizerGd(learningRate float64) *OptimizerGd{
+func NewOptimizerGd(learningRate float64) *OptimizerGd {
 	return &OptimizerGd{LearningRate: learningRate}
 }
 
-func (o *OptimizerGd)UpdateParameter(weight, dweight, bias, dbias t.Tensor) (t.Tensor, t.Tensor){
+func (o *OptimizerGd) UpdateParameter(weight, dweight, bias, dbias t.Tensor) (t.Tensor, t.Tensor) {
 	newWeight := dweight.Clone().(t.Tensor)
 	newWeightModified, err := newWeight.Apply(func(x float64) float64 {
 		res := -o.LearningRate * x
 		return res
-	}, ) 
+	})
 	handleError(err)
 	UpdatedWeight, err := t.Add(weight, newWeightModified)
 	handleError(err)
@@ -312,9 +298,9 @@ func (o *OptimizerGd)UpdateParameter(weight, dweight, bias, dbias t.Tensor) (t.T
 	newBias, err := biasCopy.Apply(func(x float64) float64 {
 		res := -o.LearningRate * x
 		return res
-	}, ) 
+	})
 	handleError(err)
-	updateBias, err := t.Add(bias,newBias )
+	updateBias, err := t.Add(bias, newBias)
 	handleError(err)
 
 	return UpdatedWeight, updateBias

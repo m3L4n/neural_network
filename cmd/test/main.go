@@ -1,12 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"image/color"
 	"log"
 	ml "neural_network/pkg/ML"
+	"neural_network/pkg/data"
 	"os"
+	"strconv"
 
+	"github.com/akamensky/argparse"
+	"github.com/go-gota/gota/dataframe"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	t "gorgonia.org/tensor"
@@ -327,50 +332,213 @@ var y = []float64{
 
 var newY t.Tensor = t.New(t.WithShape(300, 1), t.WithBacking(y))
 
+func isEmpty(df dataframe.DataFrame) bool {
+	// Check if the number of rows and columns is 0
+	return df.Nrow() == 0 || df.Ncol() == 0
+}
 
+func DfToTensorFloat64(df dataframe.DataFrame) (t.Tensor, error) {
+	if isEmpty(df) {
+		return nil, errors.New("features ( different than diagnosis or index ) of the csv need to be more than 0")
+	}
+	records := df.Records()
+	records = records[1:] // header
+	row := len(records)
+	column := len(records[0])
+	fmt.Println(len(records), len(records[0]))
+	backingTensor := make([]float64, row*column)
+	var idxBack = 0
+	for _, row := range records {
+
+		for _, value := range row {
+			valueFloat, err := strconv.ParseFloat(value, 64)
+			handleError(err)
+			backingTensor[idxBack] = valueFloat
+			idxBack += 1
+		}
+	}
+	dfTensor := t.New(t.WithShape(row, column), t.WithBacking(backingTensor))
+	return dfTensor, nil
+}
+
+func DfToTensorLabel(df dataframe.DataFrame) (t.Tensor, error) {
+	if isEmpty(df) {
+		return nil, errors.New("features ( different than diagnosis or index ) of the csv need to be more than 0")
+	}
+	records := df.Records()
+	records = records[1:] //header
+	row := len(records)
+	backingTensor := make([]float64, row)
+	for idx, row := range records {
+		for _, value := range row {
+			if value == "M" {
+				backingTensor[idx] = 0.0
+			} else if value == "B" {
+				backingTensor[idx] = 1.0
+			}
+		}
+	}
+	tensortLabel := t.New(t.WithShape(row, 1), t.WithBacking(backingTensor))
+	return tensortLabel, nil
+}
+
+func osFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
+	noHeader := dataframe.HasHeader(false)
+	var nameColumn = []string{"ID", "Diagnosis", "radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave points", "symmetry", "fractal dimension"}
+	for len(nameColumn) < 32 {
+		nameColumn = append(nameColumn, "f"+strconv.Itoa(32))
+	}
+	namesColumn := dataframe.Names(nameColumn...)
+	var df dataframe.DataFrame = dataframe.ReadCSV(dataset, namesColumn, noHeader)
+	dfTrain, dfTest, errTTS := data.TrainTestSplit(df, 0.2, false)
+	handleError(errTTS)
+
+	var yTrain = dfTrain.Select("Diagnosis")
+	var yTest = dfTest.Select("Diagnosis")
+	var xTrain = dfTrain.Drop([]string{"ID", "Diagnosis"})
+	var xTest = dfTest.Drop([]string{"ID", "Diagnosis"})
+	xTrainTensor, err := DfToTensorFloat64(xTrain)
+	handleError(err)
+	xTestTenosr, err := DfToTensorFloat64(xTest)
+	handleError(err)
+	yTrainTensor, err := DfToTensorLabel(yTrain)
+	handleError(err)
+	yTestTensor, err := DfToTensorLabel(yTest)
+	handleError(err)
+	return xTrainTensor, yTrainTensor, xTestTenosr, yTestTensor
+}
+
+
+func MinTensor( tensor t.Tensor) (float64, error){
+	shape := tensor.Shape()
+	if (shape[0] == 0 || shape[1] == 0){
+		return 0.0, errors.New("tensor need to have a valid len")
+	}
+	min, err := tensor.At(0, 0)
+	handleError(err)
+	minF := min.(float64)
+	for i := 0; i< shape[0]; i++{
+		for j := 0; j < shape[1]; j++{
+				valueTensor, err := tensor.At(i, j)
+				handleError(err)
+				valueTensorF := valueTensor.(float64)
+				if (valueTensorF < minF){
+					minF = valueTensorF
+				}
+		}
+	}
+	return minF, nil
+}
+
+func MaxTensor( tensor t.Tensor) (float64, error){
+	shape := tensor.Shape()
+	if (shape[0] == 0 || shape[1] == 0){
+		return 0.0, errors.New("tensor need to have a valid len")
+	}
+	max, err := tensor.At(0, 0)
+	handleError(err)
+	maxF := max.(float64)
+	for i := 0; i< shape[0]; i++{
+		for j := 0; j < shape[1]; j++{
+				valueTensor, err := tensor.At(i, j)
+				handleError(err)
+				valueTensorF := valueTensor.(float64)
+				if (valueTensorF > maxF){
+					maxF = valueTensorF
+				}
+		}
+	}
+	return maxF, nil
+}
+
+
+func NormTensor(tensor t.Tensor) t.Tensor{
+	tensorTmp := tensor.Clone().(t.Tensor)
+	minTensor, err := MinTensor(tensorTmp)
+	handleError(err)
+	maxTensor , err := MaxTensor(tensorTmp)
+	handleError(err)
+	normTensor, err := tensorTmp.Apply(func (x float64) float64  {
+			return  (x - minTensor) / (maxTensor - minTensor)
+	})
+	handleError(err)
+	return normTensor
+}
 func main() {
+	parser := argparse.NewParser("train", "Train the neural network")
+	var dataset *os.File = parser.File("d", "dataset", os.O_RDWR, 0600, &argparse.Options{Required: true, Help: "dataset"})
+	// var batch *int = parser.Int("b", "batch", &argparse.Options{Required: false, Help: "size of number of data perform per epoch", Default: 24})
+	var epoch *int = parser.Int("e", "epoch", &argparse.Options{Required: false, Help: "number of iteration", Default: 80})
+	var learningRate *float64 = parser.Float("l", "learning_rate", &argparse.Options{Required: false, Help: "learning rate", Default: 0.000114})
+	var hiddenLayer *[]int = parser.IntList("i", "hidden_layer", &argparse.Options{Required: false, Help: "hidden layer number of neuron for n layer ", Default: []int{24, 24, 24}})
+	// var loss *string = parser.Selector("o", "loss", []string{"binaryCrossentropy", "binaryCrossentropy1", "binaryCrossentropy2"}, &argparse.Options{Required: false, Help: "loss of the neural network", Default: "binaryCrossentropy"})
+	defer dataset.Close()
+	err := parser.Parse(os.Args)
+	if err != nil {
+		fmt.Print(parser.Usage(err))
+		return
+	}
+	if *epoch <= 0 || *learningRate <= 0 || len(*hiddenLayer) == 0 {
+		fmt.Println("Error need to receives only postiv number ")
+		os.Exit(1)
+	}
+	xTrainTensor, yTraintensor,xTestTensor, _ := osFileToTensor(dataset)
+	normXTrain :=NormTensor(xTrainTensor)
+	 NormTensor(xTestTensor)
+	//  fmt.Println(normXTrain, normXTest)
 
-
-	dense1 := ml.NewLayerDense(2, 64)
+	newGd := ml.NewOptimizerGd(*learningRate)
+	dense1 := ml.NewLayerDense(30, 64)
 	activations1 := ml.NewActivation()
-	dense2 := ml.NewLayerDense(64, 3)
+	dense2 := ml.NewLayerDense(64, 2)
 	lossActivation := ml.NewActivationSoftmax()
-	newGd := ml.NewOptimizerGd(1.)
-
-
-	for i := 0 ; i < 3000; i ++{
-
-	dense1.Foward(newX)
+	dense1.Foward(normXTrain)
 	activations1.Forward(dense1.Output)
 	dense2.Foward(activations1.Output)
-	lossActivation.Forward(dense2.Output) // end input
-
-
-	acc := ml.Accuracy(lossActivation.Outpout, newY)
-	loss, _ := ml.BinaryCrossEntropy(lossActivation.Outpout, newY)
-	fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", i, acc, loss)
-
-lossActivation.Backward(lossActivation.Outpout, newY)
-dense2.Backward(lossActivation.DInput)
-activations1.Backward(dense2.DInput)
-dense1.Backward(activations1.DInput)
-
-updatedWeight2 , updatedBias2 :=  newGd.UpdateParameter(dense2.Weight, dense2.DWeight, dense2.Bias, dense2.DBias)
+	lossActivation.Forward(dense2.Output)
+	acc := ml.Accuracy(lossActivation.Outpout, yTraintensor)
+	loss, _ := ml.BinaryCrossEntropy(lossActivation.Outpout, yTraintensor)
+		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", 0, acc, loss)
+		lossActivation.Backward(lossActivation.Outpout, yTraintensor)
+		dense2.Backward(lossActivation.DInput)
+		 activations1.Backward(dense2.DInput)
+		dense1.Backward(activations1.DInput)
+		 updatedWeight2 , updatedBias2 :=  newGd.UpdateParameter(dense2.Weight, dense2.DWeight, dense2.Bias, dense2.DBias)
 updatedWeight1 , updatedBias1 :=  newGd.UpdateParameter(dense1.Weight, dense1.DWeight, dense1.Bias, dense1.DBias)
 dense2.Weight = updatedWeight2
 dense2.Bias =  updatedBias2
 dense1.Weight = updatedWeight1
 dense1.Bias =  updatedBias1
-
-
-
-
-	}
-
-
-
-
 }
+
+
+
+// func main() {
+
+
+// 	for i := 0 ; i < 3000; i ++{
+
+// 	lossActivation.Forward(dense2.Output) // end input
+
+// 	acc := ml.Accuracy(lossActivation.Outpout, newY)
+// 	loss, _ := ml.BinaryCrossEntropy(lossActivation.Outpout, newY)
+// 	fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", i, acc, loss)
+
+// lossActivation.Backward(lossActivation.Outpout, newY)
+// dense2.Backward(lossActivation.DInput)
+// activations1.Backward(dense2.DInput)
+// dense1.Backward(activations1.DInput)
+
+// updatedWeight2 , updatedBias2 :=  newGd.UpdateParameter(dense2.Weight, dense2.DWeight, dense2.Bias, dense2.DBias)
+// updatedWeight1 , updatedBias1 :=  newGd.UpdateParameter(dense1.Weight, dense1.DWeight, dense1.Bias, dense1.DBias)
+// dense2.Weight = updatedWeight2
+// dense2.Bias =  updatedBias2
+// dense1.Weight = updatedWeight1
+// dense1.Bias =  updatedBias1
+
+// 	}
+
+// }
 
 func PlotData(x [][]float64, path string) {
 	p := plot.New()
