@@ -488,27 +488,39 @@ func main() {
 	//  fmt.Println(normXTrain, normXTest)
 
 	newGd := ml.NewOptimizerGd(*learningRate)
-	dense1 := ml.NewLayerDense(30, 64)
+	dense1 := ml.NewLayerDense(30,64)
 	activations1 := ml.NewActivation()
-	dense2 := ml.NewLayerDense(64, 2)
+	activations2 := ml.NewActivation()
+	dense2 := ml.NewLayerDense(64, 64)
+	dense3 := ml.NewLayerDense(64, 2)
 	lossActivation := ml.NewActivationSoftmax()
+	for i := 0 ; i < 1000 ; i ++{
+
 	dense1.Foward(normXTrain)
 	activations1.Forward(dense1.Output)
 	dense2.Foward(activations1.Output)
-	lossActivation.Forward(dense2.Output)
+	activations2.Forward(dense2.Output)
+	dense3.Foward(activations2.Output)
+	lossActivation.Forward(dense3.Output)
 	acc := ml.Accuracy(lossActivation.Outpout, yTraintensor)
 	loss, _ := ml.BinaryCrossEntropy(lossActivation.Outpout, yTraintensor)
-		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", 0, acc, loss)
+		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", i, acc, loss)
 		lossActivation.Backward(lossActivation.Outpout, yTraintensor)
-		dense2.Backward(lossActivation.DInput)
-		 activations1.Backward(dense2.DInput)
-		dense1.Backward(activations1.DInput)
+		dense3.Backward(lossActivation.DInput)
+		 activations1.Backward(dense3.DInput)
+		 	dense2.Backward(activations1.DInput)
+		 activations2.Backward(dense2.DInput)
+		dense1.Backward(activations2.DInput)
 		 updatedWeight2 , updatedBias2 :=  newGd.UpdateParameter(dense2.Weight, dense2.DWeight, dense2.Bias, dense2.DBias)
 updatedWeight1 , updatedBias1 :=  newGd.UpdateParameter(dense1.Weight, dense1.DWeight, dense1.Bias, dense1.DBias)
+updatedWeight3 , updatedBias3 :=  newGd.UpdateParameter(dense3.Weight, dense3.DWeight, dense3.Bias, dense3.DBias)
 dense2.Weight = updatedWeight2
 dense2.Bias =  updatedBias2
 dense1.Weight = updatedWeight1
 dense1.Bias =  updatedBias1
+dense3.Weight = updatedWeight3
+dense3.Bias =  updatedBias3
+	}
 }
 
 

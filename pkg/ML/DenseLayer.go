@@ -153,7 +153,7 @@ func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
 
 func NewLayerDense(n_input, n_neuron int) LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
-	stdDev := math.Sqrt(2.0 / float64(n_input))
+	stdDev := math.Sqrt(2.0 / float64(n_neuron))
 	weight, err := weightCopy.MulScalar(stdDev, false)
 	handleError(err)
 	bias := t.New(t.WithShape(1, n_neuron), t.Of(t.Float64))
@@ -199,26 +199,14 @@ func handleError(err error) {
 
 func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
 
-	newYPred := Argmax(yPred)
+	newYPred := ArgmaxPred(yPred)
+	fmt.Println(newYPred)
 	shapeY := y.Shape()
 	shapeYPred := newYPred.Shape()
 	if shapeY[0] != shapeYPred[0] {
 		return 0, errors.New("shape of prediction and labels have to be the same")
 	}
 	epsilon := 1e-10
-	// newYPredClipped := newYPred.Clone().(t.Tensor)
-	// for i := 0; i < newYPred.Shape()[0]; i++{
-	// 	value , err := newYPred.At(i, 0)
-	// 	handleError(err)
-	// 	if (value.(float64) < epsilon){
-
-	// 	newYPredClipped.SetAt(epsilon, i, 0)
-	// 	}else if (value.(float64) > 1- epsilon ){
-	// 		newYPredClipped.SetAt(1.0 - epsilon, i, 0)
-	// 	}else{
-	// 	newYPredClipped.SetAt(value.(float64), i, 0)
-	// 	}
-	// }
 	var bce = 0.0
 	for i := 0; i < shapeY[0]; i++ {
 		valueLabel, err := y.At(i, 0)
@@ -235,7 +223,6 @@ func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
 
 func Argmax(yPred t.Tensor) t.Tensor {
 	shapeYPred := yPred.Shape()
-	fmt.Println("ARGMAX", shapeYPred)
 	newYPred := t.New(t.WithShape(yPred.Shape()[0], 1), t.Of(t.Float64))
 	for i := 0; i < shapeYPred[0]; i++ {
 		indexMax := 0
@@ -253,11 +240,30 @@ func Argmax(yPred t.Tensor) t.Tensor {
 	}
 	return newYPred
 }
+
+func ArgmaxPred(yPred t.Tensor) t.Tensor {
+	shapeYPred := yPred.Shape()
+	newYPred := t.New(t.WithShape(yPred.Shape()[0], 1), t.Of(t.Float64))
+	for i := 0; i < shapeYPred[0]; i++ {
+		indexMax := 0
+		valueMax, err := yPred.At(i, indexMax)
+		handleError(err)
+		for j := 0; j < shapeYPred[1]; j++ {
+			valueTmp, err := yPred.At(i, j)
+			handleError(err)
+			if (valueMax.(float64)) < valueTmp.(float64) {
+				valueMax = valueTmp
+				indexMax = j
+			}
+		}
+		newYPred.SetAt(valueMax.(float64), i, 0)
+	}
+	return newYPred
+}
 func Accuracy(yPred, yTrue t.Tensor) float64 {
 
 	newYPred := Argmax(yPred)
 	for idx := 0 ; idx <  yTrue.Shape()[0]; idx++{
-		fmt.Println(newYPred.At(idx,0))
 	}
 	fmt.Println(newYPred.Shape()[0], yTrue.Shape()[0])
 	predictionSum := 0
