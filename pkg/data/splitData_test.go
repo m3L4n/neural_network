@@ -1,7 +1,6 @@
 package data
 
 import (
-	"neural_network/pkg/utils"
 	"os"
 	"testing"
 
@@ -9,7 +8,7 @@ import (
 )
 
 func openDataset() (*os.File, error) {
-	path, err := utils.FindProjectRoot()
+	path, err := FindProjectRoot()
 	if err != nil {
 		return &os.File{}, err
 	}

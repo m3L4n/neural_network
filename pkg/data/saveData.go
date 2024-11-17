@@ -1,7 +1,6 @@
 package data
 
 import (
-	"neural_network/pkg/utils"
 	"os"
 	"path/filepath"
 
@@ -18,7 +17,7 @@ import (
 // nameFile : string -> the name of the file with its extension (example : x.csv)
 func SaveData(df dataframe.DataFrame, directoryName, nameFile string) error {
 
-	path, errPath := utils.FindProjectRoot()
+	path, errPath := FindProjectRoot()
 	if errPath != nil {
 		return nil
 	}

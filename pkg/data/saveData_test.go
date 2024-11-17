@@ -2,7 +2,6 @@ package data
 
 import (
 	"fmt"
-	"neural_network/pkg/utils"
 	"os"
 	"testing"
 
@@ -28,7 +27,7 @@ func removeFile(pathFile string) error {
 
 func createFolderTest() (string, error) {
 
-	pathRoot, err := utils.FindProjectRoot()
+	pathRoot, err := FindProjectRoot()
 	if err != nil {
 		return "", err
 	}
