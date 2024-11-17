@@ -3,7 +3,6 @@ package data
 import (
 	"errors"
 	"math/rand"
-	"os"
 
 	"github.com/go-gota/gota/dataframe"
 )
@@ -16,13 +15,12 @@ import (
 // testSize : float32 between (0.1 and 0.9) ( it will be the representation of test dataset (for example 0.3 => mean that we kept 30% of the len in the test dataset )
 //
 //	return the two dataset
-func TrainTestSplit(dataset *os.File, testSize float32) (dataframe.DataFrame, dataframe.DataFrame, error) {
+func TrainTestSplit(df dataframe.DataFrame, testSize float32, save bool) (dataframe.DataFrame, dataframe.DataFrame, error) {
 
 	if testSize < 0.0 || testSize > 0.9 {
-		return dataframe.DataFrame{}, dataframe.DataFrame{}, errors.New("empty name")
+		return dataframe.DataFrame{}, dataframe.DataFrame{}, errors.New("invalid test size: must be between 0.0 and 0.9")
 	}
 
-	var df dataframe.DataFrame = dataframe.ReadCSV(dataset)
 	n := df.Nrow()
 	testRows := int(testSize * float32(n))
 	indices := make([]int, n)
@@ -34,13 +32,16 @@ func TrainTestSplit(dataset *os.File, testSize float32) (dataframe.DataFrame, da
 	})
 	shuffledTrain := df.Subset(indices[testRows:])
 	shuffledTest := df.Subset(indices[:testRows])
-	err := SaveData(shuffledTest, "data", "data_train.csv")
-	if err != nil {
-		return dataframe.DataFrame{}, dataframe.DataFrame{}, err
-	}
-	errTest := SaveData(shuffledTest, "data", "data_test.csv")
-	if errTest != nil {
-		return dataframe.DataFrame{}, dataframe.DataFrame{}, errTest
+	if save {
+		err := SaveData(shuffledTrain, "data", "data_train.csv")
+		if err != nil {
+			return dataframe.DataFrame{}, dataframe.DataFrame{}, err
+		}
+
+		errTest := SaveData(shuffledTest, "data", "data_test.csv")
+		if errTest != nil {
+			return dataframe.DataFrame{}, dataframe.DataFrame{}, errTest
+		}
 	}
 	return shuffledTrain, shuffledTest, nil
 
