@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math"
 	"neural_network/pkg/data"
 	"os"
 	"strconv"
@@ -8,6 +9,65 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	t "gorgonia.org/tensor"
 )
+
+func MeanTensor(tensor t.Tensor) (float64, error) {
+	sum, err := t.Sum(tensor, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	shape := tensor.Shape()
+	numElements := shape[0] * shape[1]
+	if len(shape) == 1 {
+		numElements = shape[0]
+	}
+
+	mean := sum.Data().([]float64)[0] / float64(numElements)
+	return mean, nil
+}
+
+func StdTensor(tensor t.Tensor) (float64, error) {
+	mean, err := MeanTensor(tensor)
+	if err != nil {
+		return 0, err
+	}
+
+	squaredDiff := tensor.Clone().(t.Tensor)
+	squaredDiff, _ = squaredDiff.Apply(func(x float64) float64 {
+		return math.Pow(x-mean, 2)
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	variance, err := t.Sum(squaredDiff, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	shape := tensor.Shape()
+	numElements := shape[0] * shape[1]
+	if len(shape) == 1 {
+	}
+
+	varianceValue := variance.Data().([]float64)[0] / float64(numElements)
+	stddev := math.Sqrt(varianceValue)
+
+	return stddev, nil
+}
+
+func ZScoreNormTensor(tensor t.Tensor) t.Tensor {
+	tensorTmp := tensor.Clone().(t.Tensor)
+	mean, err := MeanTensor(tensorTmp)
+	handleError(err)
+	stddev, err := StdTensor(tensorTmp)
+	handleError(err)
+	normTensor, err := tensorTmp.Apply(func(x float64) float64 {
+		return (x - mean) / stddev
+	})
+	handleError(err)
+	return normTensor
+}
 
 func OsFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
 	noHeader := dataframe.HasHeader(false)
@@ -20,7 +80,7 @@ func OsFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
 	}
 	namesColumn := dataframe.Names(nameColumn...)
 	var df dataframe.DataFrame = dataframe.ReadCSV(dataset, namesColumn, noHeader)
-	dfTrain, dfTest, errTTS := data.TrainTestSplit(df, 0.2, false)
+	dfTrain, dfTest, errTTS := data.TrainTestSplit(df, 0.15, false)
 	handleError(errTTS)
 
 	var yTrain = dfTrain.Select("Diagnosis")
@@ -35,7 +95,9 @@ func OsFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
 	handleError(err)
 	yTestTensor, err := DfToTensorLabel(yTest)
 	handleError(err)
-	normXTrain := data.NormTensor(xTrainTensor)
-	normXTest := data.NormTensor(xTestTenosr)
+	normXTrain := ZScoreNormTensor(xTrainTensor)
+	// normXTrain := data.NormTensor(xTrainTensor)
+	// normXTest := data.NormTensor(xTestTenosr)
+	normXTest := ZScoreNormTensor(xTestTenosr)
 	return normXTrain, yTrainTensor, normXTest, yTestTensor
 }

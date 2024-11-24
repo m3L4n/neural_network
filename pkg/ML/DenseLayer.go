@@ -38,14 +38,19 @@ func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
 
 }
 
-func NewLayerDense(n_input, n_neuron int) LayerDense {
+func NewLayerDense(n_input, n_neuron int) *LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
-	stdDev := math.Sqrt(6.0 / float64(n_neuron+n_input))
-	weight, err := weightCopy.MulScalar((stdDev * 2), false)
-	weightSub, _ := weight.SubScalar(stdDev, false)
+	stdDev := math.Sqrt(2.0 / float64(n_input))
+	weight, err := weightCopy.Apply(func(x float64) float64 {
+		// return x*0.2 - 0.1
+		return x*2*stdDev - stdDev // Échelle uniforme entre [-stdDev, stdDev]
+	})
+	// stdDev := math.Sqrt(6.0 / float64(n_neuron+n_input))
+	// weight, err := weightCopy.MulScalar((stdDev * 2), false)
+	// weightSub, _ := weight.SubScalar(stdDev, false)
 	handleError(err)
 	bias := t.New(t.WithShape(1, n_neuron), t.Of(t.Float64))
-	return LayerDense{Weight: weightSub, Bias: bias, input: t.New(t.Of(t.Float64))}
+	return &LayerDense{Weight: weight, Bias: bias, input: t.New(t.Of(t.Float64))}
 }
 
 func (l *LayerDense) Foward(inputs t.Tensor) {
@@ -105,29 +110,12 @@ func Argmax(yPred t.Tensor) t.Tensor {
 	return newYPred
 }
 
-func ArgmaxPred(yPred t.Tensor) t.Tensor {
-	shapeYPred := yPred.Shape()
-	newYPred := t.New(t.WithShape(yPred.Shape()[0], 1), t.Of(t.Float64))
-	for i := 0; i < shapeYPred[0]; i++ {
-		valueMax, err := yPred.At(i, 1)
-		handleError(err)
-		for j := 0; j < shapeYPred[1]; j++ {
-			valueTmp, err := yPred.At(i, 1)
-			handleError(err)
-			if (valueMax.(float64)) < valueTmp.(float64) {
-				valueMax = valueTmp
-			}
-		}
-		newYPred.SetAt(valueMax.(float64), i, 0)
-	}
-	return newYPred
-}
 func Accuracy(yPred, yTrue t.Tensor) float64 {
 
 	newYPred := Argmax(yPred)
 	for idx := 0; idx < yTrue.Shape()[0]; idx++ {
 	}
-	fmt.Println(newYPred.Shape()[0], yTrue.Shape()[0])
+	// fmt.Println(newYPred.Shape()[0], yTrue.Shape()[0])
 	predictionSum := 0
 	for idx := 0; idx < yTrue.Shape()[0]; idx++ {
 		classPred, err := newYPred.At(idx, 0)
