@@ -8,7 +8,7 @@ import (
 )
 
 func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
-	epsilon := 1e-10
+	epsilon := 1e-7
 	shapeY := y.Shape()
 	shapeYPred := yPred.Shape()
 
@@ -31,7 +31,7 @@ func BinaryCrossEntropy(yPred, y t.Tensor) (float64, error) {
 			return 0, err
 		}
 		valuePredictionF := valuePrediction.(float64)
-		bce += valueLabelF*math.Log(math.Max(valuePredictionF, epsilon)) + (1-valueLabelF)*math.Log(math.Max(1-valuePredictionF, epsilon))
+		bce += valueLabelF*math.Log(math.Max(valuePredictionF, epsilon)) + (1-valueLabelF)*math.Log(math.Max(1-valuePredictionF, 1-epsilon))
 	}
 
 	return -bce / float64(shapeY[0]), nil

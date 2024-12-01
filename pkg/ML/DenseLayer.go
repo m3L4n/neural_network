@@ -9,13 +9,17 @@ import (
 )
 
 type LayerDense struct {
-	Weight  t.Tensor
-	Bias    t.Tensor
-	Output  t.Tensor
-	input   t.Tensor
-	DWeight t.Tensor
-	DBias   t.Tensor
-	DInput  t.Tensor
+	Weight       t.Tensor
+	Bias         t.Tensor
+	Output       t.Tensor
+	input        t.Tensor
+	DWeight      t.Tensor
+	DBias        t.Tensor
+	DInput       t.Tensor
+	Weight_regL2 float64
+	Weight_regL1 float64
+	Bias_regL1   float64
+	Bias_regL2   float64
 }
 
 func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
@@ -38,19 +42,21 @@ func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
 
 }
 
-func NewLayerDense(n_input, n_neuron int) *LayerDense {
+func NewLayerDense(n_input, n_neuron int, lweight_regL1, lwbias_regL1, lweight_regL2, lwbias_regL2 float64) *LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
+	// stdDev := math.Sqrt( float64(n_input))
 	stdDev := math.Sqrt(2.0 / float64(n_input))
 	weight, err := weightCopy.Apply(func(x float64) float64 {
-		// return x*0.2 - 0.1
-		return x*2*stdDev - stdDev // Échelle uniforme entre [-stdDev, stdDev]
+		return x*2*stdDev - stdDev
+		// return x / stdDev
+		// return x / stdDev
 	})
 	// stdDev := math.Sqrt(6.0 / float64(n_neuron+n_input))
 	// weight, err := weightCopy.MulScalar((stdDev * 2), false)
 	// weightSub, _ := weight.SubScalar(stdDev, false)
 	handleError(err)
 	bias := t.New(t.WithShape(1, n_neuron), t.Of(t.Float64))
-	return &LayerDense{Weight: weight, Bias: bias, input: t.New(t.Of(t.Float64))}
+	return &LayerDense{Weight: weight, Bias: bias, input: t.New(t.Of(t.Float64)), Weight_regL1: lweight_regL1, Bias_regL1: lwbias_regL1, Weight_regL2: lweight_regL2, Bias_regL2: lwbias_regL2}
 }
 
 func (l *LayerDense) Foward(inputs t.Tensor) {
@@ -60,6 +66,7 @@ func (l *LayerDense) Foward(inputs t.Tensor) {
 	if len(dP.Shape()) == 1 {
 		dP.Reshape(dP.Shape()[0], 1)
 	}
+
 	layerOutput := addBias(dP, l.Bias)
 	l.Output = layerOutput
 }
@@ -69,15 +76,32 @@ func (l *LayerDense) Backward(dvalues t.Tensor) {
 	var inputTranspose t.Tensor = l.input.Clone().(t.Tensor)
 	inputTranspose.T()
 	dweight, err := t.Dot(inputTranspose, dvalues)
-	l.DWeight = dweight
 	handleError(err)
 	sum, err := t.Sum(dvalues, 0)
 	handleError(err)
 	sum.Reshape(1, sum.Shape()[0])
-	l.DBias = sum
 	tmpWeight := l.Weight.Clone().(t.Tensor)
 	tmpWeight.T()
+	if l.Weight_regL2 > 0 {
+		tmpWeightL2, err := t.Mul((2 * l.Weight_regL2), l.Weight)
 
+		handleErrorMsg("Error in reg l2 mul scalar", err)
+		regDweight, err := t.Add(dweight, tmpWeightL2)
+		handleErrorMsg("Error in reg l2 in add tensor", err)
+		dweight = regDweight
+	}
+
+	if l.Bias_regL2 > 0 {
+		tmpBias, err := t.Mul((2 * l.Bias_regL2), l.Bias)
+
+		handleErrorMsg("Error in reg l2 mul scalar", err)
+		regBias, err := t.Add(sum, tmpBias)
+		handleErrorMsg("Error in reg l2 in add tensor", err)
+		sum = regBias
+	}
+
+	l.DWeight = dweight
+	l.DBias = sum
 	l.DInput, err = t.Dot(dvalues, tmpWeight)
 	handleError(err)
 
@@ -86,6 +110,13 @@ func (l *LayerDense) Backward(dvalues t.Tensor) {
 func handleError(err error) {
 	if err != nil {
 		log.Fatal(err)
+		fmt.Println(err)
+	}
+}
+
+func handleErrorMsg(msg string, err error) {
+	if err != nil {
+		log.Fatalf(" error : %v \t%v", msg, err)
 		fmt.Println(err)
 	}
 }

@@ -10,11 +10,11 @@ import (
 	"gonum.org/v1/plot/plotter"
 )
 
-func TrainNN(learningRate float64, dataset *os.File, epoch int, hiddenLayer []int) {
-	xTrainTensor, yTraintensor, xTest, yTest := utils.OsFileToTensor(dataset)
+func TrainNN(learningRate float64, dataset *os.File, epoch int, hiddenLayer []int, batch int) {
+	xTrainTensor, yTraintensor, xTest, yTest := utils.PreprocessData(dataset, true)
 	neuralNetwork := NewNeuralNetwork(learningRate, xTrainTensor, hiddenLayer, epoch)
-	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest)
-}
+	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest, batch)
+	SaveNeuralNetwork(neuralNetwork)
 
 func PlotData(path string, train []float64, test []float64) {
 	p := plot.New()

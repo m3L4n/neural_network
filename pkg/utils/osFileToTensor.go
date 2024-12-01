@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"log"
 	"math"
 	"neural_network/pkg/data"
 	"os"
@@ -86,7 +88,10 @@ func OsFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
 	var yTrain = dfTrain.Select("Diagnosis")
 	var yTest = dfTest.Select("Diagnosis")
 	var xTrain = dfTrain.Drop([]string{"ID", "Diagnosis", "radius", "perimeter", "area", "f10", "f12", "f13"})
+	// var xTrain = dfTrain.Drop([]string{"ID", "Diagnosis", })
+	// var xTest = dfTest.Drop([]string{"ID", "Diagnosis" })
 	var xTest = dfTest.Drop([]string{"ID", "Diagnosis", "radius", "perimeter", "area", "f10", "f12", "f13"})
+	// var xTest = dfTest.Drop([]string{"ID", "Diagnosis",  "perimeter", "area", "concave points", "f10", "f12", "f13"})
 	xTrainTensor, err := DfToTensorFloat64(xTrain)
 	handleError(err)
 	xTestTenosr, err := DfToTensorFloat64(xTest)
@@ -100,4 +105,53 @@ func OsFileToTensor(dataset *os.File) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
 	// normXTest := data.NormTensor(xTestTenosr)
 	normXTest := ZScoreNormTensor(xTestTenosr)
 	return normXTrain, yTrainTensor, normXTest, yTestTensor
+}
+
+func osToDF(dataset *os.File) dataframe.DataFrame {
+	noHeader := dataframe.HasHeader(false)
+	var nameColumn = []string{"ID", "Diagnosis", "radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave points", "symmetry", "fractal dimension"}
+	i := 0
+	for len(nameColumn) < 32 {
+
+		nameColumn = append(nameColumn, "f"+strconv.Itoa(i))
+		i++
+	}
+	namesColumn := dataframe.Names(nameColumn...)
+	var df dataframe.DataFrame = dataframe.ReadCSV(dataset, namesColumn, noHeader)
+	return df
+}
+
+func selectFeatured(df dataframe.DataFrame) (t.Tensor, t.Tensor) {
+
+	var y = df.Select("Diagnosis")
+	var x = df.Drop([]string{"ID", "Diagnosis", "radius", "perimeter", "area", "f10", "f12", "f13"})
+	xTensor, err := DfToTensorFloat64(x)
+	handleErrorMsg("Error in transformation of X dataframe to tensor", err)
+	yTensor, err := DfToTensorLabel(y)
+	handleErrorMsg("Error in transformation of  Y dataframe to tensor", err)
+	return xTensor, yTensor
+}
+
+func PreprocessData(dataset *os.File, split bool) (t.Tensor, t.Tensor, t.Tensor, t.Tensor) {
+	df := osToDF(dataset)
+	if split {
+		dfTrain, dfTest, errTTS := data.TrainTestSplit(df, 0.2, false)
+		handleErrorMsg("error in split dataset", errTTS)
+		xTrain, yTrain := selectFeatured(dfTrain)
+		xTest, yTest := selectFeatured(dfTest)
+		xTrainNorm := ZScoreNormTensor(xTrain)
+		xTestNorm := ZScoreNormTensor(xTest)
+		return xTrainNorm, yTrain, xTestNorm, yTest
+	}
+	x, y := selectFeatured(df)
+	xNorm := ZScoreNormTensor(x)
+	return xNorm, y, nil, nil
+
+}
+
+func handleErrorMsg(msg string, err error) {
+	if err != nil {
+		log.Fatalf(" error : %v \t%v", msg, err)
+		fmt.Println(err)
+	}
 }

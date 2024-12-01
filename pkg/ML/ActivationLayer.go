@@ -13,8 +13,17 @@ type ActivationReLu struct {
 	DInput t.Tensor
 }
 
+type ActivationSigmoid struct {
+	Output t.Tensor
+	Input  t.Tensor
+	DInput t.Tensor
+}
+
 func NewActivation() *ActivationReLu {
 	return &ActivationReLu{Output: t.New(t.Of(t.Float64))}
+}
+func NewActivationSigmoid() *ActivationSigmoid {
+	return &ActivationSigmoid{Output: t.New(t.Of(t.Float64))}
 }
 
 func (a *ActivationReLu) Forward(inputs t.Tensor) {
@@ -95,7 +104,7 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 func (s *ActivationSoftmax) Backward(dvalues, y t.Tensor) error {
 	shapeY := y.Shape()
 	shapeDValues := dvalues.Shape()
-
+	// shape := dvalues.Shape()
 	outpout := dvalues.Clone().(t.Tensor)
 	if shapeY[0] != shapeDValues[0] {
 		return errors.New("Error shape 1 of y and dvalues  need to be the same")
