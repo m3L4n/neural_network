@@ -1,46 +1,45 @@
 package ml
 
 import (
-	"fmt"
+	"image/color"
+	"log"
 	"neural_network/pkg/utils"
 	"os"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
 )
 
-func TrainNN(learningRate float64, dataset *os.File) {
-	xTrainTensor, yTraintensor, _, _ := utils.OsFileToTensor(dataset)
+func TrainNN(learningRate float64, dataset *os.File, epoch int, hiddenLayer []int, batch int) {
+	xTrainTensor, yTraintensor, xTest, yTest := utils.PreprocessData(dataset, true)
+	neuralNetwork := NewNeuralNetwork(learningRate, xTrainTensor, hiddenLayer, epoch)
+	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest, batch)
+	SaveNeuralNetwork(neuralNetwork)
 
-	newGd := NewOptimizerGd(learningRate)
-	dense1 := NewLayerDense(24, 64)
-	activations1 := NewActivation()
-	activations2 := NewActivation()
-	dense2 := NewLayerDense(64, 24)
-	dense3 := NewLayerDense(24, 2)
-	lossActivation := NewActivationSoftmax()
-	for i := 0; i < 1000; i++ {
+func PlotData(path string, train []float64, test []float64) {
+	p := plot.New()
+	xys := make(plotter.XYs, len(train))
+	for i := range xys {
 
-		dense1.Foward(xTrainTensor)
-		activations1.Forward(dense1.Output)
-		dense2.Foward(activations1.Output)
-		activations2.Forward(dense2.Output)
-		dense3.Foward(activations2.Output)
-		lossActivation.Forward(dense3.Output)
-		acc := Accuracy(lossActivation.Outpout, yTraintensor)
-		loss, _ := BinaryCrossEntropy(lossActivation.Outpout, yTraintensor)
-		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \n", i, acc, loss)
-		lossActivation.Backward(lossActivation.Outpout, yTraintensor)
-		dense3.Backward(lossActivation.DInput)
-		activations2.Backward(dense3.DInput)
-		dense2.Backward(dense3.DInput)
-		activations1.Backward(dense2.DInput)
-		dense1.Backward(activations1.DInput)
-		updatedWeight2, updatedBias2 := newGd.UpdateParameter(dense2.Weight, dense2.DWeight, dense2.Bias, dense2.DBias)
-		updatedWeight1, updatedBias1 := newGd.UpdateParameter(dense1.Weight, dense1.DWeight, dense1.Bias, dense1.DBias)
-		updatedWeight3, updatedBias3 := newGd.UpdateParameter(dense3.Weight, dense3.DWeight, dense3.Bias, dense3.DBias)
-		dense2.Weight = updatedWeight2
-		dense2.Bias = updatedBias2
-		dense1.Weight = updatedWeight1
-		dense1.Bias = updatedBias1
-		dense3.Weight = updatedWeight3
-		dense3.Bias = updatedBias3
+		xys[i].Y = train[i]
+		xys[i].X = float64(i)
+	}
+	filled, err := plotter.NewLine(xys)
+	if err != nil {
+		log.Panic(err)
+	}
+	p.Add(filled)
+	xysTest := make(plotter.XYs, len(test))
+	for i := range xysTest {
+
+		xysTest[i].Y = test[i]
+		xysTest[i].X = float64(i)
+	}
+	filledTest, err := plotter.NewLine(xysTest)
+	filledTest.Color = color.RGBA{R: 255, A: 255}
+	p.Add(filledTest)
+	err = p.Save(1024, 1024, path)
+	if err != nil {
+		log.Panic(err)
 	}
 }

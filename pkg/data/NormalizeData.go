@@ -58,7 +58,7 @@ func NormTensor(tensor t.Tensor) t.Tensor {
 	normTensor, err := tensorTmp.Apply(func(x float64) float64 {
 		return (x - minTensor) / (maxTensor - minTensor)
 	})
-	fmt.Println(normTensor)
+	// fmt.Println(normTensor)
 	handleError(err)
 	return normTensor
 }
