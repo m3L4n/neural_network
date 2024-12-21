@@ -12,23 +12,16 @@ The first step involves splitting the dataset into two parts: one for training a
 ## Training the Neural Network:
 
 In this step, we will build and train the neural network on the training portion of the data. The model will learn to predict whether a tumor is malignant or benign based on the input features.
-> [TODO]
 
 ## Testing:
 After the model is trained, we will evaluate its performance on the validation set to assess how well it generalizes to new, unseen data.
 
 The dataset is located in the resources folder. It includes 32 columns, where "diagnosis" is the target label, and the other features describe the cell nucleus characteristics of breast masses.
-> [TODO]
+
 
 ## Unit Testing:
 
 Unit tests have been implemented to verify the correctness of the key functions within the project. These tests ensure that the functions behave as expected and return the appropriate outputs.
 > make test_all
 
-TODO
 
-  - [X] MAKEFILE
-  - [X] splitting program
-  - [] neural network class (logic)
-  - [] train neuralnetwork
-  - [] test neuralnetwork
