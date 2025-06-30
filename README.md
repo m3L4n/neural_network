@@ -1,27 +1,76 @@
-# Neural Network for Breast Cancer Classification
-
-This project involves building a neural network to classify breast cancer tumors as malignant (M) or benign (B) based on features extracted from cell nuclei. The dataset is provided in a CSV file containing 32 columns, where the "diagnosis" column serves as the label (M for malignant, B for benign). The other columns represent various characteristics of the cell nucleus obtained through fine-needle aspiration.
+# 🧠 Multilayer Perceptron – Machine Learning Project in Go
 
 
-Steps:
+## 🧠 Introduction
 
-## Dataset Splitting:
-The first step involves splitting the dataset into two parts: one for training and one for validation. This ensures that the model is evaluated on unseen data during the training process.
-> to launch it make split &&  ./bin/split [-d || --dataset] [path dataset] 
+This project demonstrates how to build a **Multilayer Perceptron (MLP)** from scratch in **Go** (Golang), with no machine learning libraries. The goal is to classify tumor samples as **malignant (M)** or **benign (B)** using the **Wisconsin Breast Cancer Dataset**.
 
-## Training the Neural Network:
+##### A Bit of History
+	-   Neural networks date back to the 1940s (e.g., Turing's "B-type machines")
+	-   The **Perceptron** was proposed by **Frank Rosenblatt in 1957**.
+    -   The **Multilayer Perceptron** (MLP) later emerged as a powerful tool once backpropagation was introduced.
 
-In this step, we will build and train the neural network on the training portion of the data. The model will learn to predict whether a tumor is malignant or benign based on the input features.
+## 🎯 Objectives
 
-## Testing:
-After the model is trained, we will evaluate its performance on the validation set to assess how well it generalizes to new, unseen data.
-
-The dataset is located in the resources folder. It includes 32 columns, where "diagnosis" is the target label, and the other features describe the cell nucleus characteristics of breast masses.
-
-
-## Unit Testing:
-
-Unit tests have been implemented to verify the correctness of the key functions within the project. These tests ensure that the functions behave as expected and return the appropriate outputs.
-> make test_all
+-   Implement an MLP **from scratch** in a programming language of your choice.
+    
+-   Learn the mechanics of **feedforward**, **backpropagation**, and **gradient descent**.
+    
+-   Apply these concepts to real-world data (breast cancer classification).
+    
+-   Visualize model performance with **learning curves**.
 
 
+## ⚙️ General Instructions
+
+-   **No machine learning libraries** (e.g., TensorFlow, PyTorch) allowed.
+    
+-   Libraries for **linear algebra**, **CSV handling**, and **plotting** are permitted.
+    
+-   Code must be **clear and modular**
+    
+-   If using a compiled language, include a `Makefile`.
+
+## 🚧 Mandatory Part
+
+### Dataset
+
+-   **Input**: CSV file with 30 features + 1 diagnosis label (M or B).
+    
+-   **Action**: Split into **training** and **validation** datasets.
+    
+-   **Preprocessing** is essential (normalization, label encoding, etc.).
+
+### Model Requirements
+
+-   At least **2 hidden layers**.
+    
+-   **Softmax** activation in the output layer.
+    
+-   Use **categorical cross-entropy** as the loss function.
+    
+-   Must support:
+    
+    -   Adjustable layer sizes
+        
+    -   Training hyperparameters (via file or CLI)
+        
+    -   Visualization of **loss** and **accuracy** over epochs
+        
+
+### Programs to Provide
+
+1.  **Dataset Splitter** (with random seed support)
+    
+2.  **Training Program** (backpropagation + gradient descent + model saving)
+    
+3.  **Prediction Program** (load model and predict on unseen data)
+
+### Training Output Example
+```
+Epoch 01/70 - Loss: 0.6882 - Val Loss: 0.6788
+Epoch 02/70 - Loss: 0.6501 - Val Loss: 0.6234
+...
+Epoch 70/70 - Loss: 0.0640 - Val Loss: 0.0474
+Model saved to ./models/mlp_model.json
+```
