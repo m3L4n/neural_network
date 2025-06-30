@@ -1,4 +1,4 @@
-# 🧠 Multilayer Perceptron – Machine Learning Project in Go
+#  Multilayer Perceptron – Machine Learning Project in Go
 
 
 ## 🧠 Introduction
