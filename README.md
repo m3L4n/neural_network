@@ -1,76 +1,84 @@
-#  Multilayer Perceptron – Machine Learning Project in Go
+# 🤖 Multilayer Perceptron (MLP) – Neural Network From Scratch in Go (Golang)
 
+This project is a complete **manual implementation of a Multilayer Perceptron (MLP)** neural network written in **Go (Golang)** — without using any external machine learning or deep learning frameworks.
 
-## 🧠 Introduction
+It demonstrates a deep understanding of neural networks, numerical computing, and algorithm design in a statically typed compiled language not traditionally associated with AI development.
 
-This project demonstrates how to build a **Multilayer Perceptron (MLP)** from scratch in **Go** (Golang), with no machine learning libraries. The goal is to classify tumor samples as **malignant (M)** or **benign (B)** using the **Wisconsin Breast Cancer Dataset**.
-
+---
 ##### A Bit of History
 	-   Neural networks date back to the 1940s (e.g., Turing's "B-type machines")
 	-   The **Perceptron** was proposed by **Frank Rosenblatt in 1957**.
     -   The **Multilayer Perceptron** (MLP) later emerged as a powerful tool once backpropagation was introduced.
 
-## 🎯 Objectives
+---
+## 🧠 Project Overview
 
--   Implement an MLP **from scratch** in a programming language of your choice.
-    
--   Learn the mechanics of **feedforward**, **backpropagation**, and **gradient descent**.
-    
--   Apply these concepts to real-world data (breast cancer classification).
-    
--   Visualize model performance with **learning curves**.
+The goal is to classify data into multiple categories using a feedforward neural network with one or more hidden layers.
 
+The implementation includes:
 
-## ⚙️ General Instructions
+- Custom matrix operations  
+- Configurable network architecture (input, hidden, output layers)  
+- Forward and backward propagation logic  
+- Manual gradient descent optimizer  
+- Common activation functions (ReLU, Sigmoid, Softmax)  
+- Cross-entropy loss function  
+- Evaluation metrics: accuracy, confusion matrix
 
--   **No machine learning libraries** (e.g., TensorFlow, PyTorch) allowed.
-    
--   Libraries for **linear algebra**, **CSV handling**, and **plotting** are permitted.
-    
--   Code must be **clear and modular**
-    
--   If using a compiled language, include a `Makefile`.
+---
 
-## 🚧 Mandatory Part
+## 🚀 Why Go?
 
-### Dataset
+Go is known for its speed, simplicity, and concurrency support — but it's rarely used in AI. This project pushes its boundaries by applying it to machine learning tasks.
 
--   **Input**: CSV file with 30 features + 1 diagnosis label (M or B).
-    
--   **Action**: Split into **training** and **validation** datasets.
-    
--   **Preprocessing** is essential (normalization, label encoding, etc.).
+**Why this matters**:
 
-### Model Requirements
+- Shows ability to implement low-level ML logic in a performant, typed language  
+- Demonstrates language-agnostic ML proficiency  
+- Useful in systems where performance, deployment, and simplicity are key
 
--   At least **2 hidden layers**.
-    
--   **Softmax** activation in the output layer.
-    
--   Use **categorical cross-entropy** as the loss function.
-    
--   Must support:
-    
-    -   Adjustable layer sizes
-        
-    -   Training hyperparameters (via file or CLI)
-        
-    -   Visualization of **loss** and **accuracy** over epochs
-        
+---
 
-### Programs to Provide
+## 🧩 Architecture Overview
 
-1.  **Dataset Splitter** (with random seed support)
-    
-2.  **Training Program** (backpropagation + gradient descent + model saving)
-    
-3.  **Prediction Program** (load model and predict on unseen data)
+### 1. Data Processing  
+- CSV reader and parser  
+- Min-max normalization and label encoding  
+- Split into training and testing sets
 
-### Training Output Example
-```
-Epoch 01/70 - Loss: 0.6882 - Val Loss: 0.6788
-Epoch 02/70 - Loss: 0.6501 - Val Loss: 0.6234
-...
-Epoch 70/70 - Loss: 0.0640 - Val Loss: 0.0474
-Model saved to ./models/mlp_model.json
-```
+### 2. Model Architecture  
+- Fully connected layers  
+- Forward propagation using dot products  
+- Activation: Sigmoid, ReLU, or Softmax  
+- Configurable layer sizes
+
+### 3. Training Process  
+- Manual backpropagation implementation using chain rule  
+- Loss gradient computation (categorical cross-entropy)  
+- Weight and bias updates with learning rate tuning  
+- Epoch loop with loss and accuracy tracking
+
+### 4. Evaluation  
+- Confusion matrix and per-class accuracy  
+- Final predictions and model export (if needed)
+
+---
+
+## 💡 Key Features
+
+- ✅ Pure Go — No external ML/AI libraries  
+- ✅ Full forward & backward pass logic  
+- ✅ Modular and scalable architecture  
+- ✅ Reproducible and testable
+
+---
+
+## 🖼️ Optional Visualizations (Python or Go-based)
+
+If needed, performance curves (loss/accuracy) can be generated using:
+
+- Matplotlib (via exported `.csv`)
+- Gonum / SVGo (for native Go plots)
+
+---
+
