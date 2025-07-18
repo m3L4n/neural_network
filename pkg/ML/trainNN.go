@@ -15,6 +15,7 @@ func TrainNN(learningRate float64, dataset *os.File, epoch int, hiddenLayer []in
 	neuralNetwork := NewNeuralNetwork(learningRate, xTrainTensor, hiddenLayer, epoch)
 	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest, batch)
 	SaveNeuralNetwork(neuralNetwork)
+}
 
 func PlotData(path string, train []float64, test []float64) {
 	p := plot.New()

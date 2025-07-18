@@ -71,7 +71,6 @@ func ZScoreNormTensor(tensor t.Tensor) t.Tensor {
 	return normTensor
 }
 
-
 func osToDF(dataset *os.File) dataframe.DataFrame {
 	noHeader := dataframe.HasHeader(false)
 	var nameColumn = []string{"ID", "Diagnosis", "radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave points", "symmetry", "fractal dimension"}
