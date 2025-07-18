@@ -82,3 +82,6 @@ If needed, performance curves (loss/accuracy) can be generated using:
 
 ---
 
+how to launch it
+
+docker run -it --rm -v "$PWD":/app -w /app golang:1.23 bash
