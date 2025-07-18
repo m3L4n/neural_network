@@ -10,5 +10,4 @@ func PredictNN(dataset *os.File) {
 	nn := LoadNeuralNetwork("./model/model.bin")
 	nn.Predict(x, y)
 
-
 }
