@@ -45,7 +45,7 @@ func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
 func NewLayerDense(n_input, n_neuron int, lweight_regL1, lwbias_regL1, lweight_regL2, lwbias_regL2 float64) *LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
 	// stdDev := math.Sqrt( float64(n_input))
-	stdDev := math.Sqrt(2.0 / float64(n_input))
+	stdDev := math.Sqrt(2.0 / float64(n_input + n_neuron))
 	weight, err := weightCopy.Apply(func(x float64) float64 {
 		return x*2*stdDev - stdDev
 		// return x / stdDev

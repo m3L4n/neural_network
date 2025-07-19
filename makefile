@@ -43,19 +43,5 @@ clean:
 	@echo ">> Cleaning up..."
 	rm -rf $(BUILD_DIR)
 
-install_golint:
-	@if ! command -v $(GOLINT) &> /dev/null; then \
-		echo ">> Installing golint..."; \
-		$(GO) install golang.org/x/lint/golint@latest; \
-		echo ">> Please add $(GOLINT_PATH) to your PATH."; \
-		if [ -f ~/.zshrc ]; then \
-			echo 'export PATH=$(PATH):$(GOLINT_PATH)' >> ~/.zshrc; \
-		elif [ -f ~/.bashrc ]; then \
-			echo 'export PATH=$(PATH):$(GOLINT_PATH)' >> ~/.bashrc; \
-		elif [ -f ~/.bash_profile ]; then \
-			echo 'export PATH=$(PATH):$(GOLINT_PATH)' >> ~/.bash_profile; \
-		fi; \
-		echo ">> Added $(GOLINT_PATH) to your shell configuration. Please restart your terminal or run 'source ~/.zshrc'."; \
-	fi
 
 .PHONY: all build split train validation deps test_all fmt clean lint

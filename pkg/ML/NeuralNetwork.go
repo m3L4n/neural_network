@@ -104,14 +104,12 @@ func takeRandomBatch(x, y t.Tensor, batch_size int) (t.Tensor, t.Tensor) {
 	var newy = t.New(t.WithShape(batch_size, 1), t.WithBacking(yTensor))
 	return newX, newy
 }
-func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor, batch int) {
+func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor) {
 
 	lossTest := make([]float64, nn.epoch)
 	accTest := make([]float64, nn.epoch)
 	for i := 0; i < nn.epoch; i++ {
-
-		// take batch of X
-		x, yNew := takeRandomBatch(X, y, batch)
+		x, yNew := X, y
 		input := x
 
 		for _, hLayer := range nn.HiddenLayer {
@@ -130,13 +128,17 @@ func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor, batch int) {
 			inputTest = hLayer.ForwardLayer(inputTest)
 		}
 		predTest := nn.OutPutLayer.ForwardLayer(inputTest)
-		lossTestVal, _ := BinaryCrossEntropy(predTest, yTest)
 
 		nn.UpdateWeight()
+		lossTestVal, _ := BinaryCrossEntropy(predTest, yTest)
 		acc := Accuracy(pred, yNew)
 		loss, _ := BinaryCrossEntropy(pred, yNew)
 		accTest[i] = Accuracy(predTest, yTest)
 		lossTest[i] = lossTestVal
+// 		if i > 1 && lossTest[i] > lossTest[i-1] && lossTest[i-1] > lossTest[i-2] {
+//     fmt.Println("→ Early stopping: validation loss remonte.")
+//     break
+// }
 		nn.Loss[i] = loss
 		nn.Accuracy[i] = acc
 		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \tloss test :  %v acc test %v \n ", i, acc, loss, lossTestVal, accTest[i])
