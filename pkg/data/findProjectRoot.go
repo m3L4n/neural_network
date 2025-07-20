@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-// FindProjectRoot permit to get the root folder
+// FindProjectRoot get the root folder
 //
 // return the absolute path of the root folder
 func FindProjectRoot() (string, error) {

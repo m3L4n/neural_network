@@ -2,9 +2,9 @@ package ml
 
 import (
 	"fmt"
-	"math/rand"
 
 	t "gorgonia.org/tensor"
+	"neural_network/pkg/utils"
 )
 
 type HiddenLayerStruct struct {
@@ -12,10 +12,6 @@ type HiddenLayerStruct struct {
 	Activation *ActivationReLu
 }
 
-//	type HiddenLayerStruct struct {
-//		Layer      *LayerDense
-//		Activation *ActivationSigmoid
-//	}
 type OutputLayerStruct struct {
 	Layer      *LayerDense
 	Activation *ActivationSoftmax
@@ -33,7 +29,6 @@ func NewNeuralNetwork(learningRate float64, X t.Tensor, layer []int, epoch int) 
 	shape := X.Shape()
 	allLayer := make([]HiddenLayerStruct, len(layer))
 	var nNeuronBefore int = shape[1]
-	// fmt.Println(nNeuronBefore)
 	idx := 0
 	for _, nNeuron := range layer {
 		layer := NewLayerDense(nNeuronBefore, nNeuron, 0, 0, 5e-4, 5e-4)
@@ -74,36 +69,7 @@ func (oL *OutputLayerStruct) BackwardLayer(y t.Tensor) t.Tensor {
 	return oL.Layer.DInput
 }
 
-func (nn *NeuralNetwork) UpdateWeight() {
 
-	for _, hl := range nn.HiddenLayer {
-		updatedWeight, updatedBias := nn.Gd.UpdateParameter(hl.Layer.Weight, hl.Layer.DWeight, hl.Layer.Bias, hl.Layer.DBias)
-		hl.Layer.Weight = updatedWeight
-		hl.Layer.Bias = updatedBias
-	}
-	updatedWeight, updatedBias := nn.Gd.UpdateParameter(nn.OutPutLayer.Layer.Weight, nn.OutPutLayer.Layer.DWeight, nn.OutPutLayer.Layer.Bias, nn.OutPutLayer.Layer.DBias)
-	nn.OutPutLayer.Layer.Weight = updatedWeight
-	nn.OutPutLayer.Layer.Bias = updatedBias
-}
-
-func takeRandomBatch(x, y t.Tensor, batch_size int) (t.Tensor, t.Tensor) {
-	shape := x.Shape()
-	var valueTensor []float64
-	var yTensor []float64
-	for _ = range batch_size {
-		intRand := rand.Intn(shape[0])
-		row, err := x.Slice(t.S(intRand))
-		rowY, errY := y.Slice(t.S(intRand))
-		handleErrorMsg("Error in slice", err)
-		handleErrorMsg("Error in slice y ", errY)
-		valueTensor = append(valueTensor, row.Data().([]float64)...)
-		yTensor = append(yTensor, float64(rowY.Data().(float64)))
-	}
-	//  ))
-	var newX = t.New(t.WithShape(batch_size, shape[1]), t.WithBacking(valueTensor))
-	var newy = t.New(t.WithShape(batch_size, 1), t.WithBacking(yTensor))
-	return newX, newy
-}
 func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor) {
 
 	lossTest := make([]float64, nn.epoch)
@@ -135,19 +101,12 @@ func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor) {
 		loss, _ := BinaryCrossEntropy(pred, yNew)
 		accTest[i] = Accuracy(predTest, yTest)
 		lossTest[i] = lossTestVal
-// 		if i > 1 && lossTest[i] > lossTest[i-1] && lossTest[i-1] > lossTest[i-2] {
-//     fmt.Println("→ Early stopping: validation loss remonte.")
-//     break
-// }
 		nn.Loss[i] = loss
 		nn.Accuracy[i] = acc
 		fmt.Printf(" Epoch %v \t Accuracy : %v \t loss : %v \tloss test :  %v acc test %v \n ", i, acc, loss, lossTestVal, accTest[i])
-		// if (lossTest[i] <= 0.08){
-		// 	fmt.Print("loss of 0.08 get", lossTest[i])
-		// }
 	}
-	PlotData("loss.png", nn.Loss, lossTest)
-	PlotData("Accuracy.png", nn.Accuracy, accTest)
+	utils.PlotData("loss.png", nn.Loss, lossTest)
+	utils.PlotData("Accuracy.png", nn.Accuracy, accTest)
 
 }
 

@@ -44,16 +44,10 @@ func addBias(inputs t.Tensor, bias t.Tensor) t.Tensor {
 
 func NewLayerDense(n_input, n_neuron int, lweight_regL1, lwbias_regL1, lweight_regL2, lwbias_regL2 float64) *LayerDense {
 	weightCopy := t.New(t.WithShape(n_input, n_neuron), t.WithBacking(t.Random(t.Float64, n_input*n_neuron)))
-	// stdDev := math.Sqrt( float64(n_input))
 	stdDev := math.Sqrt(2.0 / float64(n_input + n_neuron))
 	weight, err := weightCopy.Apply(func(x float64) float64 {
 		return x*2*stdDev - stdDev
-		// return x / stdDev
-		// return x / stdDev
 	})
-	// stdDev := math.Sqrt(6.0 / float64(n_neuron+n_input))
-	// weight, err := weightCopy.MulScalar((stdDev * 2), false)
-	// weightSub, _ := weight.SubScalar(stdDev, false)
 	handleError(err)
 	bias := t.New(t.WithShape(1, n_neuron), t.Of(t.Float64))
 	return &LayerDense{Weight: weight, Bias: bias, input: t.New(t.Of(t.Float64)), Weight_regL1: lweight_regL1, Bias_regL1: lwbias_regL1, Weight_regL2: lweight_regL2, Bias_regL2: lwbias_regL2}
@@ -121,74 +115,5 @@ func handleErrorMsg(msg string, err error) {
 	}
 }
 
-func Argmax(yPred t.Tensor) t.Tensor {
-	shapeYPred := yPred.Shape()
-	newYPred := t.New(t.WithShape(yPred.Shape()[0], 1), t.Of(t.Float64))
-	for i := 0; i < shapeYPred[0]; i++ {
-		indexMax := 0
-		valueMax, err := yPred.At(i, indexMax)
-		handleError(err)
-		for j := 0; j < shapeYPred[1]; j++ {
-			valueTmp, err := yPred.At(i, j)
-			handleError(err)
-			if (valueMax.(float64)) < valueTmp.(float64) {
-				valueMax = valueTmp
-				indexMax = j
-			}
-		}
-		newYPred.SetAt(float64(indexMax), i, 0)
-	}
-	return newYPred
-}
 
-func Accuracy(yPred, yTrue t.Tensor) float64 {
 
-	newYPred := Argmax(yPred)
-	for idx := 0; idx < yTrue.Shape()[0]; idx++ {
-	}
-	// fmt.Println(newYPred.Shape()[0], yTrue.Shape()[0])
-	predictionSum := 0
-	for idx := 0; idx < yTrue.Shape()[0]; idx++ {
-		classPred, err := newYPred.At(idx, 0)
-		handleError(err)
-		classTrue, err := yTrue.At(idx, 0)
-		handleError(err)
-		if classPred.(float64) == classTrue.(float64) {
-			predictionSum += 1
-		} else {
-			predictionSum += 0
-		}
-	}
-	var meanAccuracy float64 = float64(predictionSum) / float64(yTrue.Shape()[0])
-	return meanAccuracy
-}
-
-type OptimizerGd struct {
-	LearningRate float64
-}
-
-func NewOptimizerGd(learningRate float64) *OptimizerGd {
-	return &OptimizerGd{LearningRate: learningRate}
-}
-
-func (o *OptimizerGd) UpdateParameter(weight, dweight, bias, dbias t.Tensor) (t.Tensor, t.Tensor) {
-	newWeight := dweight.Clone().(t.Tensor)
-	newWeightModified, err := newWeight.Apply(func(x float64) float64 {
-		res := -o.LearningRate * x
-		return res
-	})
-	handleError(err)
-	UpdatedWeight, err := t.Add(weight, newWeightModified)
-	handleError(err)
-
-	biasCopy := dbias.Clone().(t.Tensor)
-	newBias, err := biasCopy.Apply(func(x float64) float64 {
-		res := -o.LearningRate * x
-		return res
-	})
-	handleError(err)
-	updateBias, err := t.Add(bias, newBias)
-	handleError(err)
-
-	return UpdatedWeight, updateBias
-}
