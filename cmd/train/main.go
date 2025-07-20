@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	ml "neural_network/pkg/ML"
 	"os"
-
+	"neural_network/pkg/utils"
 	"github.com/akamensky/argparse"
 )
 
@@ -25,6 +25,9 @@ func main() {
 		fmt.Println("Error need to receives only postiv number ")
 		os.Exit(1)
 	}
-	 rand.Seed(12) // Seed the random number generator for reproducibility
-	ml.TrainNN(*learningRate, dataset, *epoch, *hiddenLayer,)
+	rand.Seed(12) // Seed the random number generator for reproducibility
+	xTrainTensor, yTraintensor, xTest, yTest := utils.PreprocessData(dataset, true)
+	neuralNetwork := ml.NewNeuralNetwork(*learningRate, xTrainTensor, *hiddenLayer, *epoch)
+	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest)
+	ml.SaveNeuralNetwork(neuralNetwork)
 }

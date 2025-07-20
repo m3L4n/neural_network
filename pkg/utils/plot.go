@@ -1,21 +1,13 @@
-package ml
+package utils
 
 import (
 	"image/color"
 	"log"
-	"neural_network/pkg/utils"
-	"os"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 )
 
-func TrainNN(learningRate float64, dataset *os.File, epoch int, hiddenLayer []int) {
-	xTrainTensor, yTraintensor, xTest, yTest := utils.PreprocessData(dataset, true)
-	neuralNetwork := NewNeuralNetwork(learningRate, xTrainTensor, hiddenLayer, epoch)
-	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest)
-	SaveNeuralNetwork(neuralNetwork)
-}
 func PlotData(path string, train []float64, test []float64) {
 	p := plot.New()
 	xys := make(plotter.XYs, len(train))
