@@ -86,5 +86,5 @@ how to launch it
 
 docker run -it --rm -v "$PWD":/app -w /app golang:1.23 bash
 - make
-- ./bin/train -d [dataset] 
-./bin/test -d [dataset]
+- /bin/train -d [./data/data_train.csv | dataset_path] -l 0.022 -i 32 -i 16
+./bin/test -d [dataset_path] 
