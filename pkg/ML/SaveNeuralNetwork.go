@@ -14,6 +14,8 @@ type LayerConfig struct {
 	// Activation string
 	L1Reg     float64
 	L2Reg     float64
+	L1RegBias float64
+	L2RegBias float64
 	Weights   []float64
 	Shape     []int
 	Bias      []float64
@@ -44,7 +46,7 @@ func LoadLayerConfigsFromBinary(filepath string) ([]LayerConfig, error) {
 	return configs, err
 }
 
-func CreateLayerConfig(name string, inputSize, outputSize int, weightTensor, biasTensor t.Tensor) LayerConfig {
+func CreateLayerConfig(name string, inputSize, outputSize int, L1Reg, L1RegBias, L2Reg, L2RegBias float64, weightTensor, biasTensor t.Tensor) LayerConfig {
 	data := weightTensor.Data().([]float64)
 	shape := weightTensor.Shape()
 	biases := biasTensor.Data().([]float64)
@@ -57,6 +59,10 @@ func CreateLayerConfig(name string, inputSize, outputSize int, weightTensor, bia
 		Bias:       biases,
 		Shape:      shape,
 		Shapebias:  biasShape,
+		L1Reg:      L1Reg,
+		L2Reg:      L2Reg,
+		L2RegBias:  L2RegBias,
+		L1RegBias:  L1RegBias,
 	}
 }
 
@@ -65,10 +71,10 @@ func SaveNeuralNetwork(nn NeuralNetwork) {
 
 	for i, hl := range nn.HiddenLayer {
 		shape := hl.Layer.Weight.Shape()
-		layer[i] = CreateLayerConfig("hidden", shape[0], shape[1], hl.Layer.Weight, hl.Layer.Bias)
+		layer[i] = CreateLayerConfig("hidden", shape[0], shape[1], hl.Layer.Weight_regL1, hl.Layer.Bias_regL1, hl.Layer.Weight_regL2, hl.Layer.Bias_regL2, hl.Layer.Weight, hl.Layer.Bias)
 	}
 	shapeOutput := nn.OutPutLayer.Layer.Weight.Shape()
-	layer[len(nn.HiddenLayer)] = CreateLayerConfig("output", shapeOutput[0], shapeOutput[1], nn.OutPutLayer.Layer.Weight, nn.OutPutLayer.Layer.Bias)
+	layer[len(nn.HiddenLayer)] = CreateLayerConfig("output", shapeOutput[0], shapeOutput[1], nn.OutPutLayer.Layer.Weight_regL1, nn.OutPutLayer.Layer.Bias_regL1, nn.OutPutLayer.Layer.Weight_regL2, nn.OutPutLayer.Layer.Bias_regL2, nn.OutPutLayer.Layer.Weight, nn.OutPutLayer.Layer.Bias)
 	filepath := "./model/model.bin"
 	err := SaveLayerConfigsToBinary(layer, filepath)
 	handleErrorMsg("Error in save weight and bias", err)
@@ -83,13 +89,13 @@ func LoadNeuralNetwork(path string) NeuralNetwork {
 	for idx, layer := range loadedLayers {
 		if layer.Type == "hidden" {
 
-			newLayer := NewLayerDense(layer.InputSize, layer.OutputSize, 0, 0, 0, 0)
+			newLayer := NewLayerDense(layer.InputSize, layer.OutputSize, layer.L1Reg, layer.L1RegBias, layer.L2Reg, layer.L2RegBias)
 			newLayer.Weight = t.New(t.WithShape(layer.Shape...), t.WithBacking(layer.Weights))
 			newLayer.Bias = t.New(t.WithShape(layer.Shapebias...), t.WithBacking(layer.Bias))
 			allLayer[idx] = HiddenLayerStruct{Layer: newLayer, Activation: NewActivation()}
 		} else if layer.Type == "output" {
 			outPutLayer.Activation = NewActivationSoftmax()
-			newLayerOuput := NewLayerDense(layer.InputSize, layer.OutputSize, 0, 0, 0, 0)
+			newLayerOuput := NewLayerDense(layer.InputSize, layer.OutputSize, layer.L1Reg, layer.L1RegBias, layer.L2Reg, layer.L2RegBias)
 			newLayerOuput.Weight = t.New(t.WithShape(layer.Shape...), t.WithBacking(layer.Weights))
 			newLayerOuput.Bias = t.New(t.WithShape(layer.Shapebias...), t.WithBacking(layer.Bias))
 			outPutLayer.Layer = newLayerOuput

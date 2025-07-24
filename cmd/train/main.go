@@ -26,8 +26,8 @@ func main() {
 		os.Exit(1)
 	}
 	rand.Seed(12) // Seed the random number generator for reproducibility
-	xTrainTensor, yTraintensor, xTest, yTest := utils.PreprocessData(dataset, true)
+	xTrainTensor, yTrainTensor, xTest, yTest := utils.PreprocessData(dataset, true)
 	neuralNetwork := ml.NewNeuralNetwork(*learningRate, xTrainTensor, *hiddenLayer, *epoch)
-	neuralNetwork.Fit(xTrainTensor, yTraintensor, xTest, yTest)
+	neuralNetwork.Fit(xTrainTensor, yTrainTensor, xTest, yTest)
 	ml.SaveNeuralNetwork(neuralNetwork)
 }

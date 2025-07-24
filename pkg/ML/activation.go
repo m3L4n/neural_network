@@ -13,19 +13,16 @@ type ActivationReLu struct {
 	DInput t.Tensor
 }
 
-type ActivationSigmoid struct {
-	Output t.Tensor
-	Input  t.Tensor
-	DInput t.Tensor
-}
 
 func NewActivation() *ActivationReLu {
 	return &ActivationReLu{Output: t.New(t.Of(t.Float64))}
 }
-func NewActivationSigmoid() *ActivationSigmoid {
-	return &ActivationSigmoid{Output: t.New(t.Of(t.Float64))}
-}
 
+// Forward method applies the ReLU activation function to the input tensor
+//
+// It replaces negative values with zero and keeps positive values unchanged.
+// It is used to introduce non-linearity into the network, which allows it to learn complex patterns.
+// formula : ReLU(x) = max(0, x)
 func (a *ActivationReLu) Forward(inputs t.Tensor) {
 	a.Input = inputs
 	zeros := t.New(t.WithShape(inputs.Shape()...), t.Of(t.Float64))
@@ -35,6 +32,8 @@ func (a *ActivationReLu) Forward(inputs t.Tensor) {
 	a.Output = output
 }
 
+//Backward method computes the gradient of the ReLU activation function
+// It sets the gradient to zero for negative inputs and keeps it unchanged for positive inputs.
 func (a *ActivationReLu) Backward(dvalues t.Tensor) {
 	output := dvalues.Clone().(t.Tensor)
 	shapeDvalues := dvalues.Shape()
@@ -62,9 +61,16 @@ func NewActivationSoftmax() *ActivationSoftmax {
 	return &ActivationSoftmax{Outpout: t.New(t.Of(t.Float64))}
 }
 
+// Forward method applies the softmax activation function to the input tensor
+// It computes the exponential of each element, normalizes by the sum of exponentials, and
+// stores the result in the Outpout tensor.
+// It will give us the probability for each classes to be the real classes of the input tensor.
+// formula : softmax(x_i) = exp(x_i) / sum(exp(x_j))
 func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 	shape := layerOutput.Shape()
 	expValues := t.New(t.WithShape(shape...), t.Of(t.Float64))
+
+	// to find the max in the tensor for each row
 	for i := range shape[0] {
 		max, err := layerOutput.At(i, 0)
 		handleError(err)
@@ -76,11 +82,11 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 				max = value
 			}
 		}
-
+	// softmax application (only exp for each value)
 		for j := range shape[1] {
 			value, err := layerOutput.At(i, j)
 			handleError(err)
-			res := math.Pow(math.E, (value.(float64) - max.(float64)))
+			res := math.Exp(value.(float64) - max.(float64))
 			expValues.SetAt(res, i, j)
 		}
 	}
@@ -89,6 +95,7 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 	handleError(err)
 	prob := t.New(t.WithShape(shape...), t.Of(t.Float64))
 	shapeExp := expValues.Shape()
+	// softmax final application  ( e^x_i -max  / sum(e^x_i) )
 	for i := range shapeExp[0] {
 		for j := range shapeExp[1] {
 			value, err := expValues.At(i, j)
@@ -101,11 +108,14 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 
 }
 
+// Backward method computes the gradient of the softmax activation function
+// It adjusts the gradients based on the predicted and true labels.
+// It will give us the gradient of the softmax activation function.
+// formula = gradient[i,trueClass]= probability[i,trueClass] − 1
 func (s *ActivationSoftmax) Backward(dvalues, y t.Tensor) error {
 	shapeY := y.Shape()
 	shapeDValues := dvalues.Shape()
-	// shape := dvalues.Shape()
-	outpout := dvalues.Clone().(t.Tensor)
+	output := dvalues.Clone().(t.Tensor)
 	if shapeY[0] != shapeDValues[0] {
 		return errors.New("Error shape 1 of y and dvalues  need to be the same")
 	}
@@ -113,17 +123,18 @@ func (s *ActivationSoftmax) Backward(dvalues, y t.Tensor) error {
 		valueY, err := y.At(i, 0)
 		handleError(err)
 		value, err := dvalues.At(i, int(valueY.(float64)))
-		outpout.SetAt((value.(float64) - 1.), i, int(valueY.(float64)))
+		output.SetAt((value.(float64) - 1.), i, int(valueY.(float64)))
 
 	}
 	normFactor := float64(shapeY[0])
-	ouputNormTmp := outpout.Clone().(t.Tensor)
-	ouputNorm, err := ouputNormTmp.Apply(func(x float64) float64 {
+	outputNormTmp := output.Clone().(t.Tensor)
+	// normalize the output by the number of elements to avoid exploding gradients
+	outputNorm, err := outputNormTmp.Apply(func(x float64) float64 {
 		return x / normFactor
 	})
 	handleError(err)
 
-	s.DInput = ouputNorm
+	s.DInput = outputNorm
 	return nil
 
 }

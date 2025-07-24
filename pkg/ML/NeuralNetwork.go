@@ -89,13 +89,13 @@ func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor) {
 			}
 			backWardOutput = nn.HiddenLayer[i].BackwardLayer(backWardOutput)
 		}
+		nn.UpdateWeight()
 		inputTest := xTest
 		for _, hLayer := range nn.HiddenLayer {
 			inputTest = hLayer.ForwardLayer(inputTest)
 		}
-		predTest := nn.OutPutLayer.ForwardLayer(inputTest)
 
-		nn.UpdateWeight()
+		predTest := nn.OutPutLayer.ForwardLayer(inputTest)
 		lossTestVal, _ := BinaryCrossEntropy(predTest, yTest)
 		acc := Accuracy(pred, yNew)
 		loss, _ := BinaryCrossEntropy(pred, yNew)
