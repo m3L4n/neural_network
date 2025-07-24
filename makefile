@@ -24,7 +24,7 @@ train:
 	$(GO) build -o $(TRAIN_BIN) ./cmd/train/main.go
 
 validation:
-	@echo ">> Building the est application..."
+	@echo ">> Building the test application..."
 	$(GO) build -o $(validation_BIN) ./cmd/test/main.go
 deps:
 	@echo ">> Downloading dependencies..."
@@ -33,7 +33,7 @@ deps:
 test_all:
 	@echo ">> Launch test..."
 	$(GO) test ./...
-lint: install_golint
+lint: 
 	@echo ">> Running golint..."
 	$(GOLINT) ./cmd/... ./pkg/...
 fmt:
@@ -43,5 +43,6 @@ clean:
 	@echo ">> Cleaning up..."
 	rm -rf $(BUILD_DIR)
 
+re: clean build
 
 .PHONY: all build split train validation deps test_all fmt clean lint

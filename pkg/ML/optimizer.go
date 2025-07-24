@@ -4,7 +4,6 @@ import (
 	t "gorgonia.org/tensor"
 )
 
-
 type OptimizerGd struct {
 	LearningRate float64
 }

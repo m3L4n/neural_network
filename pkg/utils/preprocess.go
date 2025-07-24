@@ -10,8 +10,6 @@ import (
 	t "gorgonia.org/tensor"
 )
 
-
-
 func selectFeature(df dataframe.DataFrame) (t.Tensor, t.Tensor) {
 
 	var y = df.Select("Diagnosis")
@@ -30,7 +28,7 @@ func PreprocessData(dataset *os.File, split bool) (t.Tensor, t.Tensor, t.Tensor,
 		handleErrorMsg("error in split dataset", errTTS)
 		xTrain, yTrain := selectFeature(dfTrain)
 		xTest, yTest := selectFeature(dfTest)
-		
+
 		xTrainNorm := NormalizeTensorZScore(xTrain)
 		xTestNorm := NormalizeTensorZScore(xTest)
 		return xTrainNorm, yTrain, xTestNorm, yTest

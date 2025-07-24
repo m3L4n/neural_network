@@ -4,9 +4,7 @@ go 1.23
 
 require (
 	github.com/akamensky/argparse v1.4.0
-	github.com/fatih/color v1.17.0
 	github.com/go-gota/gota v0.12.0
-	gonum.org/v1/gonum v0.15.1
 	gonum.org/v1/plot v0.15.0
 	gorgonia.org/tensor v0.9.24
 )
@@ -25,17 +23,15 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xtgo/set v1.0.0 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
+	gonum.org/v1/gonum v0.15.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gorgonia.org/vecf32 v0.9.0 // indirect
 	gorgonia.org/vecf64 v0.9.0 // indirect

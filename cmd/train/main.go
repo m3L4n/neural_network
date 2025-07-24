@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/akamensky/argparse"
 	"math/rand"
 	ml "neural_network/pkg/ML"
-	"os"
 	"neural_network/pkg/utils"
-	"github.com/akamensky/argparse"
+	"os"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	var dataset *os.File = parser.File("d", "dataset", os.O_RDWR, 0600, &argparse.Options{Required: true, Help: "dataset"})
 	var epoch *int = parser.Int("e", "epoch", &argparse.Options{Required: false, Help: "number of iteration", Default: 1200})
 	var learningRate *float64 = parser.Float("l", "learning_rate", &argparse.Options{Required: false, Help: "learning rate", Default: 0.012})
-	var hiddenLayer *[]int = parser.IntList("i", "hidden_layer", &argparse.Options{Required: false, Help: "hidden layer number of neuron for n layer ", Default: []int{ 32, 16}})
+	var hiddenLayer *[]int = parser.IntList("i", "hidden_layer", &argparse.Options{Required: false, Help: "hidden layer number of neuron for n layer ", Default: []int{32, 16}})
 	defer dataset.Close()
 	err := parser.Parse(os.Args)
 	if err != nil {

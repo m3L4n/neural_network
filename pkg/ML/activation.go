@@ -13,7 +13,6 @@ type ActivationReLu struct {
 	DInput t.Tensor
 }
 
-
 func NewActivation() *ActivationReLu {
 	return &ActivationReLu{Output: t.New(t.Of(t.Float64))}
 }
@@ -32,7 +31,7 @@ func (a *ActivationReLu) Forward(inputs t.Tensor) {
 	a.Output = output
 }
 
-//Backward method computes the gradient of the ReLU activation function
+// Backward method computes the gradient of the ReLU activation function
 // It sets the gradient to zero for negative inputs and keeps it unchanged for positive inputs.
 func (a *ActivationReLu) Backward(dvalues t.Tensor) {
 	output := dvalues.Clone().(t.Tensor)
@@ -82,7 +81,7 @@ func (s *ActivationSoftmax) Forward(layerOutput t.Tensor) {
 				max = value
 			}
 		}
-	// softmax application (only exp for each value)
+		// softmax application (only exp for each value)
 		for j := range shape[1] {
 			value, err := layerOutput.At(i, j)
 			handleError(err)

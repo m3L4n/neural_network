@@ -69,7 +69,6 @@ func (oL *OutputLayerStruct) BackwardLayer(y t.Tensor) t.Tensor {
 	return oL.Layer.DInput
 }
 
-
 func (nn *NeuralNetwork) Fit(X, y, xTest, yTest t.Tensor) {
 
 	lossTest := make([]float64, nn.epoch)
